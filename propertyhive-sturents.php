@@ -646,7 +646,7 @@ final class PH_StuRents {
         $data['property']['address'] = array();
         $data['property']['address']['property_name'] = '';
         $data['property']['address']['property_number'] = get_post_meta( $post_id, '_address_name_number', TRUE );
-        $data['property']['address']['road_name'] = get_post_meta( $post_id, '_address_name_number', TRUE );
+        $data['property']['address']['road_name'] = get_post_meta( $post_id, '_address_street', TRUE );
         $city = '';
         $address_2 = get_post_meta( $post_id, '_address_2', TRUE );
         $address_3 = get_post_meta( $post_id, '_address_3', TRUE );
