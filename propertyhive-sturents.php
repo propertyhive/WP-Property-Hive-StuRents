@@ -755,12 +755,15 @@ final class PH_StuRents {
 
         $data['property']['energy_performance'] = array();
         $data['property']['energy_performance']['epc_reference'] = '';
-        $attachment_ids = get_post_meta( $post_id, '_epc', TRUE );
+        $attachment_ids = get_post_meta( $post_id, '_epcs', TRUE );
         $epc_certificate = '';
         if ( is_array($attachment_ids) && !empty($attachment_ids) )
         {
             $url = wp_get_attachment_image_src( $attachment_ids[0], 'large' );
-            $epc_certificate = $url[0];
+            if ( $url !== FALSE )
+            {
+                $epc_certificate = $url[0];
+            }
         }
         $data['property']['energy_performance']['epc_certificate'] = $epc_certificate;
         $data['property']['energy_performance']['eef_current'] = '';
