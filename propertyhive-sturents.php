@@ -3,7 +3,7 @@
  * Plugin Name: Property Hive StuRents Add On
  * Plugin Uri: http://wp-property-hive.com/addons/sturents-wordpress-import-export/
  * Description: Add on for Property Hive which imports and exports properties from the StuRents website
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: PropertyHive
  * Author URI: http://wp-property-hive.com
  */
