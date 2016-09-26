@@ -633,10 +633,10 @@ final class PH_StuRents {
         $data['property']['property_type'] = 'Residential';
         $data['property']['facilities'] = array();
         $data['property']['eligibility'] = array(
-            'undergraduate_student' => false,
-            'postgraduate_student' => false,
-            'professional' => false,
-            'trainee' => false,
+            'undergraduate_student' => true,
+            'postgraduate_student' => true,
+            'professional' => true,
+            'trainee' => true,
             'dss' => false,
             'pets_permitted' => false,
             'smoking_permitted' => false,
