@@ -33,10 +33,18 @@ class properthive_sturents_update
 			'slug'		=>	dirname( plugin_basename( str_replace('-update.php', '.php', __FILE__) ) )
 		);
 		
-		
-		// filters
-		add_filter('pre_set_site_transient_update_plugins', array($this, 'check_update'));
-		add_filter('plugins_api', array($this, 'check_info'), 10, 3);
+		$license = get_option( 'propertyhive_license_key_details', array() );
+
+		if ( !is_array( $license ) ) { $license = array(); }
+
+	    if ( isset($license['active']) && $license['active'] == '1' && isset($license['expires_at']) && $license['expires_at'] != '' && strtotime($license['expires_at']) > time() )
+	    {
+	        // Active and current license
+
+			// filters
+			add_filter('pre_set_site_transient_update_plugins', array($this, 'check_update'));
+			add_filter('plugins_api', array($this, 'check_info'), 10, 3);
+		}
 	}
 	
 	
