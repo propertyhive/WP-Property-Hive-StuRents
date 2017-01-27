@@ -103,9 +103,41 @@ final class PH_StuRents {
 
     public function run_custom_sturents_property_import_cron() 
     {
-        if( isset($_GET['custom_sturents_property_import_cron']) )
+        if ( isset($_GET['custom_sturents_property_import_cron']) )
         {
             do_action($_GET['custom_sturents_property_import_cron']);
+        }
+
+        if ( isset($_GET['action']) && $_GET['action'] == 'sturentspushall' && isset($_GET['id']) && $_GET['id'] != '' )
+        {
+            // Get all properties
+            $args = array(
+                'post_type' => 'property',
+                'nopaging' => true,
+                'meta_query' => array(
+                    array(
+                        'key' => '_on_market',
+                        'value' => 'yes'
+                    ),
+                    array(
+                        'key' => '_department',
+                        'value' => 'residential-lettings'
+                    )
+                )
+            );
+            $property_query = new WP_Query( $args );
+
+            if ($property_query->have_posts())
+            {
+                while ($property_query->have_posts())
+                {
+                    $property_query->the_post();
+
+                    $data = $this->generate_property_export_data( get_the_ID() );
+
+                    $this->do_property_export_request( $data, get_the_ID(), $_GET['id'] );
+                }
+            }
         }
     }
 
@@ -399,13 +431,17 @@ final class PH_StuRents {
                                         API Key: ' . $feed['api_key'];
                                     }
                                     echo '</td>';
-                                        echo '<td class="actions">';
-                                        if ( $feed['type'] == 'import' )
+                                    echo '<td class="actions">
+                                        <a class="button" href="' . admin_url( 'admin.php?page=ph-settings&tab=sturents&section=edit' . $feed['type'] . '&id=' . $i ) . '">' . __( 'Edit', 'propertyhive' ) . '</a>';
+                                        if ( $feed['type'] == 'import' && $feed['mode'] == 'live' )
                                         {
-                                            echo '<a class="button" onclick="jQuery(this).text(\'' . __( 'Running', 'propertyhive' ) . '...\'); jQuery(\'a.button\').attr(\'disabled\', \'disabled\');" href="' . admin_url( 'admin.php?page=ph-settings&tab=sturents&custom_sturents_property_import_cron=phsturentspropertyimportcronhook&id=' . $i ) . '">' . __( 'Run Now', 'propertyhive' ) . '</a>&nbsp;';
+                                            echo '&nbsp;<a class="button" onclick="jQuery(this).text(\'' . __( 'Running', 'propertyhive' ) . '...\'); jQuery(\'a.button\').attr(\'disabled\', \'disabled\');" href="' . admin_url( 'admin.php?page=ph-settings&tab=sturents&custom_sturents_property_import_cron=phsturentspropertyimportcronhook&id=' . $i ) . '">' . __( 'Run Now', 'propertyhive' ) . '</a>';
                                         }
-                                        echo '<a class="button" href="' . admin_url( 'admin.php?page=ph-settings&tab=sturents&section=edit' . $feed['type'] . '&id=' . $i ) . '">' . __( 'Edit', 'propertyhive' ) . '</a>
-                                        </td>';
+                                        if ( $feed['type'] == 'export' && $feed['mode'] == 'live' )
+                                        {
+                                            echo '&nbsp;<a class="button" onclick="alert(\'This will push all properties to StuRents that are on the market and have been selected to be sent to StuRents. Please be patient as this may take a few minutes.\'); jQuery(this).text(\'' . __( 'Pushing', 'propertyhive' ) . '...\'); jQuery(\'a.button\').attr(\'disabled\', \'disabled\');" href="' . admin_url( 'admin.php?page=ph-settings&tab=sturents&action=sturentspushall&id=' . $i ) . '">' . __( 'Push All Properties', 'propertyhive' ) . '</a>';
+                                        }
+                                        echo '</td>';
                                     echo '</tr>';
                                 }
                             }
@@ -614,6 +650,13 @@ final class PH_StuRents {
         if ( get_post_status( $post_id ) == 'auto-draft' )
             return;
         
+        $data = $this->generate_property_export_data( $post_id );
+
+        $this->do_property_export_request( $data, $post_id );
+    }
+
+    private function generate_property_export_data( $post_id )
+    {
         $data = array();
 
         // Property object
@@ -774,7 +817,7 @@ final class PH_StuRents {
         $data['property']['accreditations'] = array();
 
         $incomplete = TRUE;
-        if ( get_post_meta( $post_id, '_on_market', TRUE ) == 'yes' )
+        if ( get_post_meta( $post_id, '_on_market', TRUE ) == 'yes' && get_post_status( $post_id ) == 'publish' )
         {
             $incomplete = FALSE;
         }
@@ -782,12 +825,22 @@ final class PH_StuRents {
 
         $data = $data['property'];
 
+        return $data;
+    }
+
+    private function do_property_export_request( $data, $post_id, $feed_id = '' )
+    {
         $current_sturents_options = get_option( 'propertyhive_sturents' );
         if ( isset($current_sturents_options['feeds']) && !empty($current_sturents_options['feeds']) )
         {
             foreach ( $current_sturents_options['feeds'] as $i => $feed)
             {
                 if ( $feed['mode'] == 'live' && $feed['type'] == 'export' ) { }else{ continue; }
+
+                if ($feed_id != '')
+                {
+                    if ( $i != $feed_id ) { continue; }
+                }
 
                 $new_data = $data;
 
@@ -850,7 +903,6 @@ final class PH_StuRents {
             }
         }
     }
-
 }
 
 endif;
