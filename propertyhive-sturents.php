@@ -55,7 +55,7 @@ final class PH_StuRents {
         // Include required files
         $this->includes();
 
-        add_action( 'init', array( $this, 'run_custom_sturents_property_import_cron') );
+        add_action( 'admin_init', array( $this, 'run_custom_sturents_property_import_cron') );
 
         add_action( 'admin_notices', array( $this, 'sturents_error_notices') );
 
