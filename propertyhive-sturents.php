@@ -65,7 +65,7 @@ final class PH_StuRents {
 
         add_action( 'propertyhive_admin_field_sturents_existing_feeds', array( $this, 'sturents_existing_feeds' ) );
 
-        add_action( 'save_post', array( $this, 'sturents_save_property' ) );
+        add_action( 'save_post', array( $this, 'sturents_save_property' ), 99 );
 
         add_action( 'phsturentspropertyimportcronhook', array( $this, 'sturents_property_import_execute_feed' ) );
     }
