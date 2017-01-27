@@ -25,12 +25,12 @@ final class PH_StuRents {
     protected static $_instance = null;
     
     /**
-     * Main PropertyHive Radial Search Instance
+     * Main PropertyHive StuRents Instance
      *
-     * Ensures only one instance of Property Hive Radial Search is loaded or can be loaded.
+     * Ensures only one instance of Property Hive StuRents is loaded or can be loaded.
      *
      * @static
-     * @return PropertyHive Radial Search - Main instance
+     * @return PropertyHive StuRents - Main instance
      */
     public static function instance() 
     {
