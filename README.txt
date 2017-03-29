@@ -3,9 +3,9 @@ Contributors: PropertyHive,BIOSTALL
 Tags: blm, propertyhive, property hive, property, real estate, software, estate agents, estate agent, sturents
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=N68UHATHAEDLN&lc=GB&item_name=BIOSTALL&no_note=0&cn=Add%20special%20instructions%20to%20the%20seller%3a&no_shipping=1&currency_code=GBP&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted
 Requires at least: 3.8
-Tested up to: 4.7.2
+Tested up to: 4.7.3
 Stable tag: trunk
-Version: 1.0.4
+Version: 1.0.5
 Homepage: http://wp-property-hive.com/addons/sturents-wordpress-import-export/
 
 This add on for Property Hive imports and exports properties from the StuRents website
@@ -26,14 +26,16 @@ Updating should work like a charm; as always though, ensure you backup your site
 
 == Changelog ==
 
+= 1.0.5 =
+* Added new setting to exports to specify if prices should be sent as per person or per property as StuRents divide the price by bedrooms if sent as per property
+* Declared support for WordPress 4.7.3
+
 = 1.0.4 =
 * Added new 'Push All Properties' button to send all properties at once
 * Set lower priority on save_post action to ensure it's called last. Previously bulk editing properties wouldn't take effect in push to StuRents
 * Declared support for WordPress 4.7.2
-* Removed recent license check addition as this plugin is free
 
 = 1.0.3 =
-* Check for valid [license key](https://wp-property-hive.com/product/12-month-license-key/) before performing future updates
 * Declared support for WordPress 4.7.1
 
 = 1.0.2 =
