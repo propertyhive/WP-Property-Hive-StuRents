@@ -357,6 +357,18 @@ final class PH_StuRents {
             ),
 
             array(
+                'title' => __( 'Prices Sent As', 'propertyhive' ),
+                'id'        => 'price_per',
+                'default'   => ( (isset($feed_details['price_per'])) ? $feed_details['price_per'] : ''),
+                'type'      => 'select',
+                'desc'  => 'If prices are sent as per property, the price will be divided by the number of bedrooms by StuRents to obtain a per person price',
+                'options'   => array(
+                    'property' => 'Per Property',
+                    'person' => 'Per Person',
+                )
+            ),
+
+            array(
                 'type'      => 'html',
                 'html'      =>  __( 'The above information can be obtained from visiting <a href="https://sturents.com/software/developer" target="_blank">https://sturents.com/software/developer</a>.', 'propertyhive' ),
             ),
@@ -582,6 +594,7 @@ final class PH_StuRents {
                             'mode' => $_POST['mode'],
                             'landlord_id' => wp_strip_all_tags( $_POST['landlord_id'] ),
                             'api_key' => wp_strip_all_tags( $_POST['api_key'] ),
+                            'price_per' => wp_strip_all_tags( $_POST['price_per'] ),
                         );
 
                         $new_sturents_options['feeds'][] = $feed;
@@ -614,6 +627,7 @@ final class PH_StuRents {
                             'mode' => $_POST['mode'],
                             'landlord_id' => wp_strip_all_tags( $_POST['landlord_id'] ),
                             'api_key' => wp_strip_all_tags( $_POST['api_key'] ),
+                            'price_per' => wp_strip_all_tags( $_POST['price_per'] ),
                         );
 
                         $new_sturents_options['feeds'][$current_id] = $feed;
@@ -840,6 +854,12 @@ final class PH_StuRents {
                 if ($feed_id != '')
                 {
                     if ( $i != $feed_id ) { continue; }
+                }
+
+                // set 'price_per' on data
+                if ( isset($feed['price_per']) && ( $feed['price_per'] == 'person' || $feed['price_per'] == 'property' ) )
+                {
+                    $data['contract']['price']['amount_per'] = $feed['price_per'];
                 }
 
                 $new_data = $data;
