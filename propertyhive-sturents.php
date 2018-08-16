@@ -3,7 +3,7 @@
  * Plugin Name: Property Hive StuRents Add On
  * Plugin Uri: http://wp-property-hive.com/addons/sturents-wordpress-import-export/
  * Description: Add on for Property Hive which imports and exports properties from the StuRents website
- * Version: 1.0.5
+ * Version: 1.0.6
  * Author: PropertyHive
  * Author URI: http://wp-property-hive.com
  */
@@ -17,7 +17,7 @@ final class PH_StuRents {
     /**
      * @var string
      */
-    public $version = '1.0.5';
+    public $version = '1.0.6';
 
     /**
      * @var PropertyHive The single instance of the class
@@ -378,7 +378,7 @@ final class PH_StuRents {
                 'id'        => 'export',
                 'default'   => ( (isset($feed_details['export'])) ? $feed_details['export'] : ''),
                 'type'      => 'select',
-                'desc'  => 'If \'Select Individual Properties\' is chosen you can select which properties are sent under the \'Marketing\' of the property record',
+                'desc'  => 'If \'Select Individual Properties\' is chosen you can select which properties are sent under the \'Marketing\' tab of the property record',
                 'options'   => array(
                     '' => 'All On Market Properties',
                     'selected' => 'Select Individual Properties',
