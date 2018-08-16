@@ -65,6 +65,11 @@ final class PH_StuRents {
 
         add_action( 'propertyhive_admin_field_sturents_existing_feeds', array( $this, 'sturents_existing_feeds' ) );
 
+        add_action( 'propertyhive_property_marketing_fields', array( $this, 'add_sturents_checkboxes' ) );
+        add_action( 'propertyhive_save_property_marketing', array( $this, 'save_sturents_checkboxes' ), 10, 1 );
+
+        add_action( 'manage_property_posts_custom_column', array( $this, 'custom_property_columns' ), 5 );
+
         add_action( 'save_post', array( $this, 'sturents_save_property' ), 99 );
 
         add_action( 'phsturentspropertyimportcronhook', array( $this, 'sturents_property_import_execute_feed' ) );
@@ -369,6 +374,18 @@ final class PH_StuRents {
             ),
 
             array(
+                'title' => __( 'Export Properties', 'propertyhive' ),
+                'id'        => 'export',
+                'default'   => ( (isset($feed_details['export'])) ? $feed_details['export'] : ''),
+                'type'      => 'select',
+                'desc'  => 'If \'Select Individual Properties\' is chosen you can select which properties are sent under the \'Marketing\' of the property record',
+                'options'   => array(
+                    '' => 'All On Market Properties',
+                    'selected' => 'Select Individual Properties',
+                )
+            ),
+
+            array(
                 'type'      => 'html',
                 'html'      =>  __( 'The above information can be obtained from visiting <a href="https://sturents.com/software/developer" target="_blank">https://sturents.com/software/developer</a>.', 'propertyhive' ),
             ),
@@ -595,6 +612,7 @@ final class PH_StuRents {
                             'landlord_id' => wp_strip_all_tags( $_POST['landlord_id'] ),
                             'api_key' => wp_strip_all_tags( $_POST['api_key'] ),
                             'price_per' => wp_strip_all_tags( $_POST['price_per'] ),
+                            'export' => wp_strip_all_tags( $_POST['export'] ),
                         );
 
                         $new_sturents_options['feeds'][] = $feed;
@@ -628,6 +646,7 @@ final class PH_StuRents {
                             'landlord_id' => wp_strip_all_tags( $_POST['landlord_id'] ),
                             'api_key' => wp_strip_all_tags( $_POST['api_key'] ),
                             'price_per' => wp_strip_all_tags( $_POST['price_per'] ),
+                            'export' => wp_strip_all_tags( $_POST['export'] ),
                         );
 
                         $new_sturents_options['feeds'][$current_id] = $feed;
@@ -643,6 +662,89 @@ final class PH_StuRents {
 
                     break;
                 }
+            }
+        }
+    }
+
+    public function add_sturents_checkboxes()
+    {        
+        $current_sturents_options = get_option( 'propertyhive_sturents', array() );
+
+        $individual = false;
+        if ( isset($current_sturents_options['feeds']) && !empty($current_sturents_options['feeds']))
+        {
+            foreach ($current_sturents_options['feeds'] as $i => $portal)
+            {
+                if ( $portal['type'] == 'export' && isset($portal['export']) && $portal['export'] == 'selected' && $portal['mode'] == 'live' )
+                {
+                    $individual = true;
+                }
+            }
+
+            if ( $individual )
+            {
+                echo '<p class="form-field"><label><strong>' . __( 'Send to StuRents', 'propertyhive' ) . ':</strong></label></p>';
+
+                foreach ($current_sturents_options['feeds'] as $i => $portal)
+                {
+                    if ( $portal['type'] == 'export' && isset($portal['export']) && $portal['export'] == 'selected' && $portal['mode'] == 'live' )
+                    {
+                        propertyhive_wp_checkbox( array( 
+                            'id' => '_sturents_portal_' . $i, 
+                            'label' => 'StuRents', 
+                            //'desc_tip' => true,
+                            //'description' => __( 'Setting the property to be on the market enables it to be displayed on the website and in applicant matches', 'propertyhive' ), 
+                        ) );
+                    }
+                }
+            }
+        }
+    }
+
+    public function save_sturents_checkboxes( $post_id )
+    {
+        $portals = array();
+        $current_sturents_options = get_option( 'propertyhive_sturents', array() );
+            
+        if ( isset($current_sturents_options['feeds']) && !empty($current_sturents_options['feeds']))
+        {
+            foreach ($current_sturents_options['feeds'] as $i => $portal)
+            {
+                if ( $portal['type'] == 'export' && isset($portal['export']) && $portal['export'] == 'selected' && $portal['mode'] == 'live' )
+                {
+                    update_post_meta($post_id, '_sturents_portal_' . $i, ( isset($_POST['_sturents_portal_' . $i]) ? $_POST['_sturents_portal_' . $i] : '' ) );
+                }
+            }
+        }
+    }
+
+    public function custom_property_columns( $column )
+    {
+        global $post, $propertyhive, $the_property;
+
+        if ( empty( $the_property ) || $the_property->ID != $post->ID ) 
+        {
+            $the_property = new PH_Property( $post->ID );
+        }
+
+        switch ( $column ) 
+        {
+            case 'status' :
+            {
+                $current_sturents_options = get_option( 'propertyhive_sturents', array() );
+
+                if ( isset($current_sturents_options['feeds']) && !empty($current_sturents_options['feeds']))
+                {
+                    foreach ( $current_sturents_options['feeds'] as $portal_id => $portal )
+                    {
+                        if ( $portal['mode'] == 'live' && $portal['type'] == 'export' && isset($portal['export']) && $portal['export'] == 'selected' && $the_property->_on_market == 'yes' && $the_property->_department == 'residential-lettings' && $the_property->{'_sturents_portal_' . $portal_id} == 'yes' )
+                        {
+                            echo '<br>StuRents';
+                        }
+                    }
+                }
+
+                break;
             }
         }
     }
@@ -854,6 +956,11 @@ final class PH_StuRents {
                 if ($feed_id != '')
                 {
                     if ( $i != $feed_id ) { continue; }
+                }
+
+                if ( isset($feed['export']) && $feed['export'] == 'selected' && get_post_meta($post_id, '_sturents_portal_' . $i, TRUE) != 'yes' )
+                {
+                    continue;
                 }
 
                 // set 'price_per' on data
