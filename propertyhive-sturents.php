@@ -57,6 +57,8 @@ final class PH_StuRents {
 
         add_action( 'admin_init', array( $this, 'run_custom_sturents_property_import_cron') );
 
+        add_filter( "plugin_action_links_" . plugin_basename( __FILE__ ), array( $this, 'plugin_add_settings_link' ) );
+
         add_action( 'admin_notices', array( $this, 'sturents_error_notices') );
 
         add_filter( 'propertyhive_settings_tabs_array', array( $this, 'add_settings_tab' ), 19 );
@@ -73,6 +75,13 @@ final class PH_StuRents {
         add_action( 'save_post', array( $this, 'sturents_save_property' ), 99 );
 
         add_action( 'phsturentspropertyimportcronhook', array( $this, 'sturents_property_import_execute_feed' ) );
+    }
+
+    public function plugin_add_settings_link( $links )
+    {
+        $settings_link = '<a href="' . admin_url('admin.php?page=ph-settings&tab=sturents') . '">' . __( 'Settings' ) . '</a>';
+        array_push( $links, $settings_link );
+        return $links;
     }
 
     /**
