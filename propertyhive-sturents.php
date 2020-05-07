@@ -866,7 +866,7 @@ final class PH_StuRents {
         $data['property']['contract']['deposit'] = array();
         $deposit = get_post_meta( $post_id, '_deposit', TRUE );
         $data['property']['contract']['deposit']['amount'] = ( (!empty($deposit) && is_numeric($deposit)) ? (int)$deposit : 0 );
-        $data['property']['contract']['deposit']['amount_per'] = 'person';
+        $data['property']['contract']['deposit']['amount_per'] = $amount_per;
 
         $data['property']['contract']['min_contract_weeks'] = '52';
 
