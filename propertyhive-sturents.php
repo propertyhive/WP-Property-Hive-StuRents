@@ -1013,7 +1013,7 @@ final class PH_StuRents {
 
                 if ( isset($feed['export']) && $feed['export'] == 'selected' && get_post_meta($post_id, '_sturents_portal_' . $i, TRUE) != 'yes' )
                 {
-                    continue;
+                    $data['incomplete'] = TRUE;
                 }
 
                 // set 'price_per' on data
