@@ -165,6 +165,17 @@ final class PH_StuRents {
             $message = "The Property Hive plugin must be installed and activated before you can use the Property Hive StuRents add-on";
             echo"<div class=\"error\"> <p>$message</p></div>";
         }
+        else
+        {
+            global $post;
+
+            if ( isset($post->ID) && $error = get_transient( "sturents_save_error_" . $post->ID ) )
+            {
+                echo '<div class="error"><p><strong>' . $error . '</strong></p></div>';
+
+                delete_transient("sturents_save_error_" . $post->ID);
+            }
+        }
     }
 
     /**
@@ -1040,16 +1051,28 @@ final class PH_StuRents {
                 curl_setopt_array($ch , $options);
 
                 $output = curl_exec($ch);
-                $response = json_decode($output, TRUE);
                 
                 if ( $output === FALSE )
                 {
+                    set_transient("sturents_save_error_" . $post_id, "Error sending cURL request: " . curl_getinfo($ch) . " - " .curl_errno($ch) . " - " . curl_error($ch), 30);
+
                     //$this->log_error($portal['portal_id'], 1, "Error sending cURL request: " . curl_getinfo($ch) . " - " .curl_errno($ch) . " - " . curl_error($ch), $request_data, '', $post_id);
                 
                     //return false;
                 }
                 else
                 {
+                    $response = json_decode($output, TRUE);
+
+                    if ( isset($response['success']) && $response['success'] == true )
+                    {
+
+                    }
+                    else
+                    {
+                        set_transient("sturents_save_error_" . $post_id, print_r($response, TRUE), 30);
+                    }
+
                     /*if (isset($response['errors']) && !empty($response['errors']))
                     {
                         foreach ($response['errors'] as $error)
