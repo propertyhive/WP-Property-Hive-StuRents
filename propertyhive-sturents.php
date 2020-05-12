@@ -466,7 +466,40 @@ final class PH_StuRents {
                                     if ( $feed['type'] == 'export' )
                                     {
                                         echo 'Landlord ID: ' . $feed['landlord_id'] . '<br>
-                                        API Key: ' . $feed['api_key'];
+                                        API Key: ' . $feed['api_key'] . '<br>
+                                        Export: ' . ( isset($feed['export']) && $feed['export'] == 'selected' ? 'Selected Properties' : 'All On Market Properties' ) . '<br>
+                                        Active Properties: ';
+
+                                        $args = array(
+                                            'post_type' => 'property',
+                                            'nopaging' => true,
+                                            'fields' => 'ids',
+                                        );
+
+                                        $meta_query = array(
+                                            array(
+                                                'key' => '_on_market',
+                                                'value' => 'yes'
+                                            ),
+                                            array(
+                                                'key' => '_department',
+                                                'value' => 'residential-lettings'
+                                            ),
+                                        );
+
+                                        if ( isset($feed['export']) && $feed['export'] == 'selected' )
+                                        {
+                                            $meta_query[] = array(
+                                                'key' => '_sturents_portal_' . $i,
+                                                'value' => 'yes'
+                                            );
+                                        }
+
+                                        $args['meta_query'] = $meta_query;
+
+                                        $property_query = new WP_Query( $args );
+                                        
+                                        echo number_format($property_query->found_posts);
                                     }
                                     echo '</td>';
                                     echo '<td class="actions">
