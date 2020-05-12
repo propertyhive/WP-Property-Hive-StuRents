@@ -5,7 +5,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=N68UH
 Requires at least: 3.8
 Tested up to: 5.4.1
 Stable tag: trunk
-Version: 1.0.7
+Version: 1.0.8
 Homepage: http://wp-property-hive.com/addons/sturents-wordpress-import-export/
 
 This add on for Property Hive imports and exports properties from the StuRents website
@@ -25,6 +25,11 @@ The manual installation method involves downloading the Property Hive StuRents A
 Updating should work like a charm; as always though, ensure you backup your site just in case.
 
 == Changelog ==
+
+= 1.0.8 =
+* Added number of active properties to feed list for exports
+* Properties on market but with StuRents box unticked will now be sent as incomplete to remove them
+* Output error should property fail to send on save
 
 = 1.0.7 =
 * Changed deposit amount_per value to be based on price amount_per instead of defaulting to per person
