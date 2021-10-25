@@ -73,6 +73,9 @@ final class PH_StuRents {
         add_filter( 'propertyhive_property_filter_marketing_options', array( $this, 'sturents_property_filter_marketing_options' ) );
         add_filter( 'propertyhive_property_filter_query', array( $this, 'sturents_property_filter_query' ), 10, 2 );
 
+        add_action( 'propertyhive_property_bulk_edit_end', array( $this, 'sturents_bulk_edit_options' ) );
+        add_action( 'propertyhive_property_bulk_edit_save', array( $this, 'sturents_bulk_edit_save' ), 10, 1 );
+
         add_action( 'manage_property_posts_custom_column', array( $this, 'custom_property_columns' ), 5 );
 
         add_action( 'save_post', array( $this, 'sturents_save_property' ), 99 );
@@ -811,6 +814,65 @@ final class PH_StuRents {
             }
         }
         return $options;
+    }
+
+    public function sturents_bulk_edit_save( $property )
+    {
+        $current_sturents_options = get_option( 'propertyhive_sturents' );
+
+        if ( isset($current_sturents_options['feeds']) && !empty($current_sturents_options['feeds']))
+        {
+            foreach ($current_sturents_options['feeds'] as $i => $portal)
+            {
+                if ( $portal['type'] == 'export' && isset($portal['export']) && $portal['export'] == 'selected' && $portal['mode'] == 'live' )
+                {
+                    if ( isset($_REQUEST['_sturents_portal_' . $i]) && $_REQUEST['_sturents_portal_' . $i] == 'yes' )
+                    {
+                        update_post_meta( $property->id, '_sturents_portal_' . $i, 'yes' );
+                    }
+                    elseif ( isset($_REQUEST['_sturents_portal_' . $i]) && $_REQUEST['_sturents_portal_' . $i] == 'no' )
+                    {
+                        update_post_meta( $property->id, '_sturents_portal_' . $i, '' );
+                    }
+                }
+            }
+        }
+    }
+
+    public function sturents_bulk_edit_options()
+    {
+        $current_sturents_options = get_option( 'propertyhive_sturents' );
+
+        if ( isset($current_sturents_options['feeds']) && !empty($current_sturents_options['feeds']))
+        {
+            foreach ($current_sturents_options['feeds'] as $i => $portal)
+            {
+                if ( $portal['type'] == 'export' && isset($portal['export']) && $portal['export'] == 'selected' && $portal['mode'] == 'live' )
+                {
+                ?>
+                    <div class="inline-edit-group">
+                        <label class="alignleft">
+                            <span class="title"><?php _e( 'Active On Sturents', 'propertyhive' ); ?></span>
+                            <span class="input-text-wrap">
+                                <select class="sturents_portal_<?php echo $i; ?>" name="_sturents_portal_<?php echo $i; ?>">
+                                <?php
+                                    $options = array(
+                                        ''  => __( '— No Change —', 'propertyhive' ),
+                                        'yes' => __( 'Yes', 'propertyhive' ),
+                                        'no' => __( 'No', 'propertyhive' ),
+                                    );
+                                    foreach ($options as $key => $value) {
+                                        echo '<option value="' . esc_attr( $key ) . '">' . $value . '</option>';
+                                    }
+                                ?>
+                                </select>
+                            </span>
+                        </label>
+                    </div>
+                <?php
+                }
+            }
+        }
     }
 
     public function custom_property_columns( $column )
