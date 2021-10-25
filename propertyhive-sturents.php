@@ -70,6 +70,9 @@ final class PH_StuRents {
         add_action( 'propertyhive_property_marketing_fields', array( $this, 'add_sturents_checkboxes' ) );
         add_action( 'propertyhive_save_property_marketing', array( $this, 'save_sturents_checkboxes' ), 10, 1 );
 
+        add_filter( 'propertyhive_property_filter_marketing_options', array( $this, 'sturents_property_filter_marketing_options' ) );
+        add_filter( 'propertyhive_property_filter_query', array( $this, 'sturents_property_filter_query' ), 10, 2 );
+
         add_action( 'manage_property_posts_custom_column', array( $this, 'custom_property_columns' ), 5 );
 
         add_action( 'save_post', array( $this, 'sturents_save_property' ), 99 );
@@ -756,7 +759,6 @@ final class PH_StuRents {
 
     public function save_sturents_checkboxes( $post_id )
     {
-        $portals = array();
         $current_sturents_options = get_option( 'propertyhive_sturents', array() );
             
         if ( isset($current_sturents_options['feeds']) && !empty($current_sturents_options['feeds']))
@@ -769,6 +771,46 @@ final class PH_StuRents {
                 }
             }
         }
+    }
+
+    public function sturents_property_filter_query( $vars, $typenow )
+    {
+        if ( 'property' === $typenow )
+        {
+            if ( ! empty( $_GET['_marketing'] ) && substr($_GET['_marketing'], 0, 16) == 'sturents_portal_' )
+            {
+                $portal_id = sanitize_text_field( str_replace("sturents_portal_", "", $_GET['_marketing']) );
+
+                $vars['meta_query'][] = array(
+                    'key' => '_on_market',
+                    'value' => 'yes'
+                );
+
+                $vars['meta_query'][] = array(
+                    'key' => '_sturents_portal_' . $portal_id,
+                    'value' => 'yes'
+                );
+            }
+        }
+
+        return $vars;
+    }
+
+    public function sturents_property_filter_marketing_options( $options )
+    {
+        $current_sturents_options = get_option( 'propertyhive_sturents' );
+
+        if ( isset($current_sturents_options['feeds']) && !empty($current_sturents_options['feeds']))
+        {
+            foreach ($current_sturents_options['feeds'] as $i => $portal)
+            {
+                if ( $portal['type'] == 'export' && isset($portal['export']) && $portal['export'] == 'selected' && $portal['mode'] == 'live' )
+                {
+                    $options['sturents_portal_' . $i] = 'Active On Sturents';
+                }
+            }
+        }
+        return $options;
     }
 
     public function custom_property_columns( $column )
