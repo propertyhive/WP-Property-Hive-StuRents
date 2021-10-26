@@ -1140,6 +1140,7 @@ final class PH_StuRents {
                     CURLOPT_FOLLOWLOCATION => true,
                     CURLOPT_SSL_VERIFYHOST => false,
                     CURLOPT_SSL_VERIFYPEER => false,
+                    CURLOPT_CONNECTTIMEOUT => 120,
 
                     CURLOPT_POST => true,
                     CURLOPT_POSTFIELDS => $json,
