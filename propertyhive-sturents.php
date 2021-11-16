@@ -130,6 +130,8 @@ final class PH_StuRents {
 
         if ( isset($_GET['action']) && $_GET['action'] == 'sturentspushall' && isset($_GET['id']) && $_GET['id'] != '' )
         {
+            $lettings_departments = $this->ph_get_all_lettings_departments();
+
             // Get all properties
             $args = array(
                 'post_type' => 'property',
@@ -141,8 +143,9 @@ final class PH_StuRents {
                     ),
                     array(
                         'key' => '_department',
-                        'value' => 'residential-lettings'
-                    )
+                        'value' => $lettings_departments,
+                        'compare' => 'IN'
+                    ),
                 )
             );
             $property_query = new WP_Query( $args );
@@ -493,6 +496,8 @@ final class PH_StuRents {
                                             'fields' => 'ids',
                                         );
 
+                                        $lettings_departments = $this->ph_get_all_lettings_departments();
+
                                         $meta_query = array(
                                             array(
                                                 'key' => '_on_market',
@@ -500,7 +505,8 @@ final class PH_StuRents {
                                             ),
                                             array(
                                                 'key' => '_department',
-                                                'value' => 'residential-lettings'
+                                                'value' => $lettings_departments,
+                                                'compare' => 'IN'
                                             ),
                                         );
 
@@ -890,11 +896,13 @@ final class PH_StuRents {
             {
                 $current_sturents_options = get_option( 'propertyhive_sturents', array() );
 
+                $lettings_departments = $this->ph_get_all_lettings_departments();
+
                 if ( isset($current_sturents_options['feeds']) && !empty($current_sturents_options['feeds']))
                 {
                     foreach ( $current_sturents_options['feeds'] as $portal_id => $portal )
                     {
-                        if ( $portal['mode'] == 'live' && $portal['type'] == 'export' && isset($portal['export']) && $portal['export'] == 'selected' && $the_property->_on_market == 'yes' && $the_property->_department == 'residential-lettings' && $the_property->{'_sturents_portal_' . $portal_id} == 'yes' )
+                        if ( $portal['mode'] == 'live' && $portal['type'] == 'export' && isset($portal['export']) && $portal['export'] == 'selected' && $the_property->_on_market == 'yes' && in_array( $the_property->_department, $lettings_departments ) && $the_property->{'_sturents_portal_' . $portal_id} == 'yes' )
                         {
                             echo '<br>StuRents';
                         }
@@ -1199,6 +1207,23 @@ final class PH_StuRents {
                 //return $response;
             }
         }
+    }
+
+    private function ph_get_all_lettings_departments()
+    {
+        $lettings_departments = array( 'residential-lettings' );
+        $custom_departments = ph_get_custom_departments();
+        if ( !empty($custom_departments) )
+        {
+            foreach ( $custom_departments as $key => $department )
+            {
+                if ( isset($department['based_on']) && $department['based_on'] == 'residential-lettings' )
+                {
+                    $lettings_departments[] = $key;
+                }
+            }
+        }
+        return $lettings_departments;
     }
 }
 
