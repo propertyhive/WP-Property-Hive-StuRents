@@ -415,6 +415,14 @@ final class PH_StuRents {
             ),
 
             array(
+                'title'   => __( 'Only Send Property If Different From Last Time Sent', 'propertyhive' ),
+                'id'      => 'only_send_if_different',
+                'type'    => 'checkbox',
+                'default' => ( (isset($feed_details['only_send_if_different']) && $feed_details['only_send_if_different'] == '1') ? 'yes' : ''),
+                'desc'    => __( 'By default a property will be sent to StuRents each time it is saved. Most of the time the data might remain unchanged, thus causing unnecessary requests to be sent. Select this option if we should only send the property if the data has changed since last time it was sent. Especially applicable if importing properties AND sending them to StuRents, otherwise you can probably leave this unticked.', 'propertyhive' ),
+            ),
+
+            array(
                 'type'      => 'html',
                 'html'      =>  __( 'The above information can be obtained from visiting <a href="https://sturents.com/software/developer" target="_blank">https://sturents.com/software/developer</a>.', 'propertyhive' ),
             ),
@@ -678,6 +686,7 @@ final class PH_StuRents {
                             'api_key' => wp_strip_all_tags( $_POST['api_key'] ),
                             'price_per' => wp_strip_all_tags( $_POST['price_per'] ),
                             'export' => wp_strip_all_tags( $_POST['export'] ),
+                            'only_send_if_different' => wp_strip_all_tags( $_POST['only_send_if_different'] ),
                         );
 
                         $new_sturents_options['feeds'][] = $feed;
@@ -712,6 +721,7 @@ final class PH_StuRents {
                             'api_key' => wp_strip_all_tags( $_POST['api_key'] ),
                             'price_per' => wp_strip_all_tags( $_POST['price_per'] ),
                             'export' => wp_strip_all_tags( $_POST['export'] ),
+                            'only_send_if_different' => wp_strip_all_tags( $_POST['only_send_if_different'] ),
                         );
 
                         $new_sturents_options['feeds'][$current_id] = $feed;
@@ -1141,70 +1151,84 @@ final class PH_StuRents {
 
                 $json = json_encode($new_data);
 
-                $ch = curl_init();
-                         
-                $options = array( 
-                    CURLOPT_RETURNTRANSFER => true,
-                    CURLOPT_FOLLOWLOCATION => true,
-                    CURLOPT_SSL_VERIFYHOST => false,
-                    CURLOPT_SSL_VERIFYPEER => false,
-                    CURLOPT_CONNECTTIMEOUT => 120,
-
-                    CURLOPT_POST => true,
-                    CURLOPT_POSTFIELDS => $json,
-
-                    CURLOPT_URL => 'https://sturents.com/api/house?landlord=' . $feed['landlord_id'] . '&auth=' . md5($json . $feed['api_key']),
-
-                    CURLOPT_HTTPHEADER => array(
-                        'Content-Type: application/json',
-                        'Accept: application/json'
-                    )
-                );
-
-                curl_setopt_array($ch , $options);
-
-                $output = curl_exec($ch);
-                
-                if ( $output === FALSE )
+                $do_request = true;
+                if ( isset($feed['only_send_if_different']) && $feed['only_send_if_different'] == '1' )
                 {
-                    set_transient("sturents_save_error_" . $post_id, "Error sending cURL request: " . curl_getinfo($ch) . " - " .curl_errno($ch) . " - " . curl_error($ch), 30);
+                    $previous_hash = get_post_meta( $post_id, '_sturents_sha1_' . $i, TRUE );
 
-                    //$this->log_error($portal['portal_id'], 1, "Error sending cURL request: " . curl_getinfo($ch) . " - " .curl_errno($ch) . " - " . curl_error($ch), $request_data, '', $post_id);
-                
-                    //return false;
-                }
-                else
-                {
-                    $response = json_decode($output, TRUE);
-
-                    if ( isset($response['success']) && $response['success'] == true )
+                    if ( $previous_hash == sha1($json) )
                     {
+                        // Matches the data sent last time. Don't send again
+                        $do_request = false;
+                    }
+                }
 
+                if ( $do_request )
+                {
+                    $ch = curl_init();
+
+                    $options = array(
+                        CURLOPT_RETURNTRANSFER => true,
+                        CURLOPT_FOLLOWLOCATION => true,
+                        CURLOPT_SSL_VERIFYHOST => false,
+                        CURLOPT_SSL_VERIFYPEER => false,
+                        CURLOPT_CONNECTTIMEOUT => 120,
+
+                        CURLOPT_POST => true,
+                        CURLOPT_POSTFIELDS => $json,
+
+                        CURLOPT_URL => 'https://sturents.com/api/house?landlord=' . $feed['landlord_id'] . '&auth=' . md5($json . $feed['api_key']),
+
+                        CURLOPT_HTTPHEADER => array(
+                            'Content-Type: application/json',
+                            'Accept: application/json'
+                        )
+                    );
+
+                    curl_setopt_array($ch , $options);
+
+                    $output = curl_exec($ch);
+
+                    if ( $output === FALSE )
+                    {
+                        set_transient("sturents_save_error_" . $post_id, "Error sending cURL request: " . curl_getinfo($ch) . " - " .curl_errno($ch) . " - " . curl_error($ch), 30);
+
+                        //$this->log_error($portal['portal_id'], 1, "Error sending cURL request: " . curl_getinfo($ch) . " - " .curl_errno($ch) . " - " . curl_error($ch), $request_data, '', $post_id);
+
+                        //return false;
                     }
                     else
                     {
-                        set_transient("sturents_save_error_" . $post_id, print_r($response, TRUE), 30);
-                    }
+                        $response = json_decode($output, TRUE);
 
-                    /*if (isset($response['errors']) && !empty($response['errors']))
-                    {
-                        foreach ($response['errors'] as $error)
+                        if ( isset($response['success']) && $response['success'] == true )
                         {
-                            //$this->log_error($portal['portal_id'], 1, "Error returned from " . $portal['portal_name'] . " in response: " . $error['error_code'] . " - " .$error['error_description'], $request_data, $output, $post_id);
+                            // Save the SHA-1 hash so we know for next time whether to push it again or not
+                            update_post_meta( $post_id, '_sturents_sha1_' . $i, sha1($json) );
+                        }
+                        else
+                        {
+                            set_transient("sturents_save_error_" . $post_id, print_r($response, TRUE), 30);
                         }
 
-                        return false;
-                    }
-                    else
-                    {
-                        if ( $log_success )
+                        /*if (isset($response['errors']) && !empty($response['errors']))
                         {
-                            //$this->log_error($portal['portal_id'], 0, "Request successful", $request_data, $output, $post_id);
+                            foreach ($response['errors'] as $error)
+                            {
+                                //$this->log_error($portal['portal_id'], 1, "Error returned from " . $portal['portal_name'] . " in response: " . $error['error_code'] . " - " .$error['error_description'], $request_data, $output, $post_id);
+                            }
+
+                            return false;
                         }
-                    }*/
+                        else
+                        {
+                            if ( $log_success )
+                            {
+                                //$this->log_error($portal['portal_id'], 0, "Request successful", $request_data, $output, $post_id);
+                            }
+                        }*/
+                    }
                 }
-
-                //return $response;
             }
         }
     }
