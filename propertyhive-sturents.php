@@ -304,6 +304,18 @@ final class PH_StuRents {
             ),
 
             array(
+                'title' => __( 'API Version', 'propertyhive' ),
+                'id'        => 'api_version',
+                'type'      => 'select',
+                'options'   => array(
+                    '1.3' => 'v1.3',
+                    '2' => 'v2'
+                ),
+                'default' => ( (isset($feed_details['api_version'])) ? $feed_details['api_version'] : '1.3'),
+                'desc_tip'  =>  false,
+            ),
+
+            array(
                 'title' => __( 'Landlord ID', 'propertyhive' ),
                 'id'        => 'landlord_id',
                 'default'   => ( (isset($feed_details['landlord_id'])) ? $feed_details['landlord_id'] : ''),
@@ -371,6 +383,18 @@ final class PH_StuRents {
                     'live' => 'Active'
                 ),
                 'default' => ( (isset($feed_details['mode'])) ? $feed_details['mode'] : ''),
+                'desc_tip'  =>  false,
+            ),
+
+            array(
+                'title' => __( 'API Version', 'propertyhive' ),
+                'id'        => 'api_version',
+                'type'      => 'select',
+                'options'   => array(
+                    '1.3' => 'v1.3',
+                    '2' => 'v2'
+                ),
+                'default' => ( (isset($feed_details['api_version'])) ? $feed_details['api_version'] : '1.3'),
                 'desc_tip'  =>  false,
             ),
 
@@ -484,7 +508,7 @@ final class PH_StuRents {
                                 {
                                     echo '<tr>';
                                         echo '<td width="3%" class="active">' . ucwords($feed['mode']) . '</td>';
-                                        echo '<td class="type">' . ucwords($feed['type']) . '</td>';
+                                        echo '<td class="type">' . ( isset($feed['api_version']) ? 'v' . $feed['api_version'] : 'v1.3' ) . ' ' .ucwords($feed['type']) . '</td>';
                                         echo '<td class="details">';
                                     if ( $feed['type'] == 'import' )
                                     {
@@ -610,6 +634,7 @@ final class PH_StuRents {
                         $feed = array(
                             'type' => 'import',
                             'mode' => $_POST['mode'],
+                            'api_version' => $_POST['api_version'],
                             'landlord_id' => wp_strip_all_tags( $_POST['landlord_id'] ),
                             'public_key' => wp_strip_all_tags( $_POST['public_key'] ),
                         );
@@ -642,6 +667,7 @@ final class PH_StuRents {
                         $feed = array(
                             'type' => 'import',
                             'mode' => $_POST['mode'],
+                            'api_version' => $_POST['api_version'],
                             'landlord_id' => wp_strip_all_tags( $_POST['landlord_id'] ),
                             'public_key' => wp_strip_all_tags( $_POST['public_key'] ),
                         );
@@ -682,6 +708,7 @@ final class PH_StuRents {
                         $feed = array(
                             'type' => 'export',
                             'mode' => $_POST['mode'],
+                            'api_version' => $_POST['api_version'],
                             'landlord_id' => wp_strip_all_tags( $_POST['landlord_id'] ),
                             'api_key' => wp_strip_all_tags( $_POST['api_key'] ),
                             'price_per' => wp_strip_all_tags( $_POST['price_per'] ),
@@ -717,6 +744,7 @@ final class PH_StuRents {
                         $feed = array(
                             'type' => 'export',
                             'mode' => $_POST['mode'],
+                            'api_version' => $_POST['api_version'],
                             'landlord_id' => wp_strip_all_tags( $_POST['landlord_id'] ),
                             'api_key' => wp_strip_all_tags( $_POST['api_key'] ),
                             'price_per' => wp_strip_all_tags( $_POST['price_per'] ),
