@@ -81,6 +81,7 @@ final class PH_StuRents {
         add_action( 'save_post', array( $this, 'sturents_save_property' ), 99 );
 
         add_action( 'phsturentspropertyimportcronhook', array( $this, 'sturents_property_import_execute_feed' ) );
+        add_action( 'phsturentsv2propertyimportcronhook', array( $this, 'sturents_v2_property_import_execute_feed' ) );
     }
 
     public function plugin_add_settings_link( $links )
@@ -112,6 +113,23 @@ final class PH_StuRents {
         wp_defer_comment_counting( true );
 
         require( __DIR__ . '/cron.php' );
+
+        wp_cache_flush();
+
+        wp_suspend_cache_invalidation( false );
+
+        wp_defer_term_counting( false );
+        wp_defer_comment_counting( false );
+    }
+
+    public function sturents_v2_property_import_execute_feed()
+    {
+        wp_suspend_cache_invalidation( true );
+
+        wp_defer_term_counting( true );
+        wp_defer_comment_counting( true );
+
+        require( __DIR__ . '/cron_v2.php' );
 
         wp_cache_flush();
 
@@ -561,7 +579,8 @@ final class PH_StuRents {
                                         <a class="button" href="' . admin_url( 'admin.php?page=ph-settings&tab=sturents&section=edit' . $feed['type'] . '&id=' . $i ) . '">' . __( 'Edit', 'propertyhive' ) . '</a>';
                                         if ( $feed['type'] == 'import' && $feed['mode'] == 'live' )
                                         {
-                                            echo '&nbsp;<a class="button" onclick="jQuery(this).text(\'' . __( 'Running', 'propertyhive' ) . '...\'); jQuery(\'a.button\').attr(\'disabled\', \'disabled\');" href="' . admin_url( 'admin.php?page=ph-settings&tab=sturents&custom_sturents_property_import_cron=phsturentspropertyimportcronhook&id=' . $i ) . '">' . __( 'Run Now', 'propertyhive' ) . '</a>';
+                                            $cron_name = 'phsturents' . ( isset($feed['api_version']) && $feed['api_version'] == '2' ? 'v2' : '' ) . 'propertyimportcronhook';
+                                            echo '&nbsp;<a class="button" onclick="jQuery(this).text(\'' . __( 'Running', 'propertyhive' ) . '...\'); jQuery(\'a.button\').attr(\'disabled\', \'disabled\');" href="' . admin_url( 'admin.php?page=ph-settings&tab=sturents&custom_sturents_property_import_cron=' . $cron_name . '&id=' . $i ) . '">' . __( 'Run Now', 'propertyhive' ) . '</a>';
                                         }
                                         if ( $feed['type'] == 'export' && $feed['mode'] == 'live' )
                                         {

@@ -80,6 +80,10 @@ class PH_Sturents_Install {
         wp_unschedule_event($timestamp, 'phsturentsimportcronhook' );
         wp_clear_scheduled_hook('phsturentsimportcronhook');
 
+		$timestamp = wp_next_scheduled( 'phsturentsv2propertyimportcronhook' );
+        wp_unschedule_event($timestamp, 'phsturentsv2propertyimportcronhook' );
+        wp_clear_scheduled_hook('phsturentsv2propertyimportcronhook');
+
 	}
 
 	/**
@@ -90,6 +94,10 @@ class PH_Sturents_Install {
 		$timestamp = wp_next_scheduled( 'phsturentsimportcronhook' );
         wp_unschedule_event($timestamp, 'phsturentsimportcronhook' );
         wp_clear_scheduled_hook('phsturentsimportcronhook');
+
+		$timestamp = wp_next_scheduled( 'phsturentsv2propertyimportcronhook' );
+        wp_unschedule_event($timestamp, 'phsturentsv2propertyimportcronhook' );
+        wp_clear_scheduled_hook('phsturentsv2propertyimportcronhook');
 
         delete_option( 'propertyhive_sturents' );
 
@@ -128,9 +136,14 @@ class PH_Sturents_Install {
         $timestamp = wp_next_scheduled( 'phsturentsimportcronhook' );
         wp_unschedule_event($timestamp, 'phsturentsimportcronhook' );
         wp_clear_scheduled_hook('phsturentsimportcronhook');
+
+		$timestamp = wp_next_scheduled( 'phsturentsv2propertyimportcronhook' );
+        wp_unschedule_event($timestamp, 'phsturentsv2propertyimportcronhook' );
+        wp_clear_scheduled_hook('phsturentsv2propertyimportcronhook');
         
         $next_schedule = time() - 60;
         wp_schedule_event( $next_schedule, 'hourly', 'phsturentsimportcronhook' );
+		wp_schedule_event( $next_schedule, 'hourly', 'phsturentsv2propertyimportcronhook' );
     }
 
     /**
