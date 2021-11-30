@@ -1000,6 +1000,10 @@ final class PH_StuRents {
         $data = $this->generate_property_export_data( $post_id );
 
         $this->do_property_export_request( $data, $post_id );
+
+        $data_v2 = $this->generate_property_export_v2_data( $post_id );
+
+        $this->do_property_export_v2_request( $data_v2, $post_id );
     }
 
     private function generate_property_export_data( $post_id )
@@ -1326,7 +1330,7 @@ final class PH_StuRents {
         {
             foreach ( $current_sturents_options['feeds'] as $i => $feed)
             {
-                if ( $feed['mode'] == 'live' && $feed['type'] == 'export' ) { }else{ continue; }
+                if ( $feed['mode'] == 'live' && $feed['type'] == 'export' && ( !isset($feed['api_version']) || $feed['api_version'] == '1.3' ) ) { }else{ continue; }
 
                 if ($feed_id != '')
                 {
@@ -1429,6 +1433,122 @@ final class PH_StuRents {
                         }*/
                     }
                 }
+            }
+        }
+    }
+
+    private function do_property_export_v2_request( $data, $post_id, $feed_id = '' )
+    {
+        $current_sturents_options = get_option( 'propertyhive_sturents' );
+        if ( isset($current_sturents_options['feeds']) && !empty($current_sturents_options['feeds']) )
+        {
+            foreach ( $current_sturents_options['feeds'] as $i => $feed)
+            {
+                if ( $feed['mode'] == 'live' && $feed['type'] == 'export' && isset($feed['api_version']) && $feed['api_version'] == '2' ) { }else{ continue; }
+
+                if ($feed_id != '')
+                {
+                    if ( $i != $feed_id ) { continue; }
+                }
+
+                if ( isset($feed['export']) && $feed['export'] == 'selected' && get_post_meta($post_id, '_sturents_portal_' . $i, TRUE) != 'yes' )
+                {
+                    $data['disabled'] = TRUE;
+                }
+
+                // Separate media and contract nodes, which are sent in different calls
+                if ( isset($data['media']) )
+                {
+                    $media_data = $data['media'];
+                    unset($data['media']);
+                }
+
+                // If property has already been sent and has an ID saved, change sending method and remove node that isn't in update spec
+                $method = 'PUT';
+                $sturents_property_id = get_post_meta($post_id, '_sturents_property_id', TRUE);
+                if ( !empty($sturents_property_id) )
+                {
+                    $method = 'PATCH';
+                    unset($data['initial_rooms']);
+                }
+
+                $timestamp = time();
+                $json_body = json_encode($data);
+                $auth_token = hash_hmac('sha256', $json_body . $timestamp, $feed['api_key']);
+
+                if ( isset($feed['only_send_if_different']) && $feed['only_send_if_different'] == '1' )
+                {
+                    $previous_hash = get_post_meta( $post_id, '_sturents_sha1_' . $i, TRUE );
+
+                    if ( $previous_hash == sha1($json_body) )
+                    {
+                        // Matches the data sent last time. Don't send again
+                        continue;
+                    }
+                }
+
+                $url = 'https://sturents.com/api/property';
+                if ( $method == 'PATCH' )
+                {
+                    $url .= '/' . $sturents_property_id;
+                }
+                $url .= '?version=2&timestamp=' . $timestamp . '&landlord=' . $feed['landlord_id'] . '&auth=' . $auth_token;
+
+                $response = wp_remote_request(
+                    $url,
+                    array(
+                        'headers'   => array(
+                            'Content-Type'   => 'application/json',
+                        ),
+                        'body' => $json_body,
+                        'method' => $method,
+                    )
+                );
+
+                if ( is_wp_error( $response ) )
+                {
+                    set_transient("sturents_save_error_" . $post_id, 'Error when sending property ' . $post_id . ' to StuRents. Response: ' . $response->get_error_message(), 30);
+                    continue;
+                }
+
+                $response_body = json_decode( $response['body'], TRUE );
+
+                if ($response_body == FALSE)
+                {
+                    set_transient("sturents_save_error_" . $post_id, 'Invalid JSON when sending property ' . $post_id . ' to StuRents.', 30);
+                    continue;
+                }
+
+                if ( wp_remote_retrieve_response_code($response) !== 200 )
+                {
+                    if ( isset($response_body['messages']) && !empty($response_body['messages']) )
+                    {
+                        foreach ($response_body['messages'] as $message)
+                        {
+                            set_transient("sturents_save_error_" . $post_id, wp_remote_retrieve_response_code($response) . ' error returned from StuRents with the following message: ' . $message, 30);
+                        }
+                    }
+                    else
+                    {
+                        set_transient("sturents_save_error_" . $post_id, wp_remote_retrieve_response_code($response) . ' error returned from StuRents', 30);
+                    }
+                    continue;
+                }
+
+                // If we're creating a new property, save the propertyID we receive back in the response
+                if ( $method == 'PUT' && isset($response_body['property_id']) )
+                {
+                    update_post_meta( $post_id, '_sturents_property_id', $response_body['property_id'] );
+                }
+
+                // Save the SHA-1 hash so we know for next time whether to push it again or not
+                update_post_meta( $post_id, '_sturents_sha1_' . $i, sha1($json_body) );
+
+                // Add price per
+
+                // Make contract call
+
+                // Make media call
             }
         }
     }
