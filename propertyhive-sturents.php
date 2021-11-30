@@ -423,6 +423,7 @@ final class PH_StuRents {
                 ),
                 'default' => ( (isset($feed_details['api_version'])) ? $feed_details['api_version'] : '1.3'),
                 'desc_tip'  =>  false,
+                'custom_attributes' => $current_id != '' ? array('disabled' => 'disabled') : '',
             ),
 
             array(
