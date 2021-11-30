@@ -1203,9 +1203,14 @@ final class PH_StuRents {
         }
         $data['address']['city'] = $city;
         $data['address']['postcode'] = get_post_meta( $post_id, '_address_postcode', TRUE );
+        $data['address']['country'] = 'GB';
         $data['address']['uprn'] = $post_id;
 
+        $data['bank_id'] = '';
+
         $data['bathrooms'] = (int)get_post_meta( $post_id, '_bathrooms', TRUE );
+
+        $data['cluster_size'] = 0;
 
         $data['coordinates'] = array();
         $data['coordinates']['lat'] = get_post_meta( $post_id, '_latitude', TRUE );
@@ -1225,6 +1230,11 @@ final class PH_StuRents {
         $data['eligibility'] = array(
             'undergraduate_student' => true,
             'postgraduate_student' => true,
+            'professional' => true,
+            'trainee' => true,
+            'dss' => false,
+            'pets_permitted' => false,
+            'smoking_permitted' => false,
         );
 
         $data['energy_performance'] = array();
@@ -1240,8 +1250,15 @@ final class PH_StuRents {
             }
         }
         $data['energy_performance']['epc_certificate'] = $epc_certificate;
+        $data['energy_performance']['epc_reference'] = '';
+        $data['energy_performance']['eef_current'] = '';
+        $data['energy_performance']['eef_potential'] = '';
+        $data['energy_performance']['co2_current'] = '';
+        $data['energy_performance']['co2_potential'] = '';
 
         $data['facilities'] = array();
+
+        $data['floor_space'] = 0;
 
         $data['rooms_let_individually'] = TRUE;
 
