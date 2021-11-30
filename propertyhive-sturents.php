@@ -1545,11 +1545,11 @@ final class PH_StuRents {
                 // Save the SHA-1 hash so we know for next time whether to push it again or not
                 update_post_meta( $post_id, '_sturents_sha1_' . $i, sha1($json_body) );
 
-                // Add price per
+                // Add price per setting to contract data
 
                 // Make contract call
 
-                // Make media call
+                // Make media call using data in $media_data
             }
         }
     }
