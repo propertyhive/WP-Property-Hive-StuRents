@@ -741,7 +741,7 @@ final class PH_StuRents {
                             'api_key' => wp_strip_all_tags( $_POST['api_key'] ),
                             'price_per' => wp_strip_all_tags( $_POST['price_per'] ),
                             'export' => wp_strip_all_tags( $_POST['export'] ),
-                            'only_send_if_different' => wp_strip_all_tags( $_POST['only_send_if_different'] ),
+                            'only_send_if_different' => isset( $_POST['only_send_if_different'] ) ? wp_strip_all_tags( $_POST['only_send_if_different'] ) : '',
                         );
 
                         $new_sturents_options['feeds'][] = $feed;
@@ -777,7 +777,7 @@ final class PH_StuRents {
                             'api_key' => wp_strip_all_tags( $_POST['api_key'] ),
                             'price_per' => wp_strip_all_tags( $_POST['price_per'] ),
                             'export' => wp_strip_all_tags( $_POST['export'] ),
-                            'only_send_if_different' => wp_strip_all_tags( $_POST['only_send_if_different'] ),
+                            'only_send_if_different' => isset( $_POST['only_send_if_different'] ) ? wp_strip_all_tags( $_POST['only_send_if_different'] ) : '',
                         );
 
                         $new_sturents_options['feeds'][$current_id] = $feed;
