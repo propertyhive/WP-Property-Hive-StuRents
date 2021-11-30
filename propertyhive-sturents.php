@@ -174,9 +174,18 @@ final class PH_StuRents {
                 {
                     $property_query->the_post();
 
-                    $data = $this->generate_property_export_data( get_the_ID() );
+                    if ( isset($_GET['version']) && $_GET['version'] == 'v2' )
+                    {
+                        $data = $this->generate_property_export_v2_data( get_the_ID() );
 
-                    $this->do_property_export_request( $data, get_the_ID(), $_GET['id'] );
+                        $this->do_property_export_v2_request( $data, get_the_ID(), $_GET['id'] );
+                    }
+                    else
+                    {
+                        $data = $this->generate_property_export_data( get_the_ID() );
+
+                        $this->do_property_export_request( $data, get_the_ID(), $_GET['id'] );
+                    }
                 }
             }
         }
@@ -584,7 +593,7 @@ final class PH_StuRents {
                                         }
                                         if ( $feed['type'] == 'export' && $feed['mode'] == 'live' )
                                         {
-                                            echo '&nbsp;<a class="button" onclick="alert(\'This will push all properties to StuRents that are on the market and have been selected to be sent to StuRents. Please be patient as this may take a few minutes.\'); jQuery(this).text(\'' . __( 'Pushing', 'propertyhive' ) . '...\'); jQuery(\'a.button\').attr(\'disabled\', \'disabled\');" href="' . admin_url( 'admin.php?page=ph-settings&tab=sturents&action=sturentspushall&id=' . $i ) . '">' . __( 'Push All Properties', 'propertyhive' ) . '</a>';
+                                            echo '&nbsp;<a class="button" onclick="alert(\'This will push all properties to StuRents that are on the market and have been selected to be sent to StuRents. Please be patient as this may take a few minutes.\'); jQuery(this).text(\'' . __( 'Pushing', 'propertyhive' ) . '...\'); jQuery(\'a.button\').attr(\'disabled\', \'disabled\');" href="' . admin_url( 'admin.php?page=ph-settings&tab=sturents&action=sturentspushall&id=' . $i . '&version=' . ( isset($feed['api_version']) ? 'v' . $feed['api_version'] : 'v1.3' ) ) . '">' . __( 'Push All Properties', 'propertyhive' ) . '</a>';
                                         }
                                         echo '</td>';
                                     echo '</tr>';
@@ -1162,6 +1171,133 @@ final class PH_StuRents {
         $data['property']['incomplete'] = $incomplete;
 
         $data = $data['property'];
+
+        return $data;
+    }
+
+    private function generate_property_export_v2_data( $post_id )
+    {
+        $data = array();
+
+        $data['accreditations'] = array();
+
+        $data['address'] = array();
+        $data['address']['property_name'] = '';
+        $data['address']['property_number'] = get_post_meta( $post_id, '_address_name_number', TRUE );
+        $data['address']['road_name'] = get_post_meta( $post_id, '_address_street', TRUE );
+        $city = '';
+        $address_2 = get_post_meta( $post_id, '_address_2', TRUE );
+        $address_3 = get_post_meta( $post_id, '_address_3', TRUE );
+        $address_4 = get_post_meta( $post_id, '_address_4', TRUE );
+        if ( $address_3 !== FALSE && $address_3 != '' )
+        {
+            $city = $address_3;
+        }
+        elseif ( $address_4 !== FALSE && $address_4 != '' )
+        {
+            $city = $address_4;
+        }
+        elseif ( $address_2 !== FALSE && $address_2 != '' )
+        {
+            $city = $address_2;
+        }
+        $data['address']['city'] = $city;
+        $data['address']['postcode'] = get_post_meta( $post_id, '_address_postcode', TRUE );
+        $data['address']['uprn'] = $post_id;
+
+        $data['bathrooms'] = (int)get_post_meta( $post_id, '_bathrooms', TRUE );
+
+        $data['coordinates'] = array();
+        $data['coordinates']['lat'] = get_post_meta( $post_id, '_latitude', TRUE );
+        $data['coordinates']['lng'] = get_post_meta( $post_id, '_longitude', TRUE );
+
+        $data['description'] = get_the_excerpt( $post_id );
+
+        $data['designation'] = 'house';
+
+        $disabled = TRUE;
+        if ( get_post_meta( $post_id, '_on_market', TRUE ) == 'yes' && get_post_status( $post_id ) == 'publish' )
+        {
+            $disabled = FALSE;
+        }
+        $data['disabled'] = $disabled;
+
+        $data['eligibility'] = array(
+            'undergraduate_student' => true,
+            'postgraduate_student' => true,
+        );
+
+        $data['energy_performance'] = array();
+
+        $attachment_ids = get_post_meta( $post_id, '_epcs', TRUE );
+        $epc_certificate = '';
+        if ( is_array($attachment_ids) && !empty($attachment_ids) )
+        {
+            $url = wp_get_attachment_image_src( $attachment_ids[0], 'large' );
+            if ( $url !== FALSE )
+            {
+                $epc_certificate = $url[0];
+            }
+        }
+        $data['energy_performance']['epc_certificate'] = $epc_certificate;
+
+        $data['facilities'] = array();
+
+        $data['rooms_let_individually'] = TRUE;
+
+        $bedrooms = get_post_meta( $post_id, '_bedrooms', TRUE );
+        $data['initial_rooms'] = ( (!empty($bedrooms) && is_numeric($bedrooms)) ? (int)$bedrooms : '' );
+
+        // Media
+        $data['media'] = array();
+        $data['media']['photos'] = array();
+        $data['media']['videos'] = array();
+        $data['media']['floorplans'] = array();
+
+        // IMAGES
+        $attachment_ids = get_post_meta( $post_id, '_photos', TRUE );
+        if ( is_array($attachment_ids) && !empty($attachment_ids) )
+        {
+            foreach ($attachment_ids as $attachment_id)
+            {
+                $url = wp_get_attachment_image_src( $attachment_id, 'large' );
+                if ($url !== FALSE)
+                {
+                    $thumb_url = wp_get_attachment_image_src( $attachment_id, 'thumbnail' );
+
+                    $media = array(
+                        'type' => 'url',
+                        'photo' => $url[0],
+                        'thumb' => $thumb_url[0],
+                    );
+
+                    $data['media']['photos'][] = $media;
+                }
+            }
+        }
+
+        // VIDEOS
+        $num_property_virtual_tours = get_post_meta( $post_id, '_virtual_tours', TRUE );
+        if ($num_property_virtual_tours == '') { $num_property_virtual_tours = 0; }
+
+        for ($i = 0; $i < $num_property_virtual_tours; ++$i)
+        {
+            $data['media']['videos'][] = get_post_meta( $post_id, '_virtual_tour_' . $i, TRUE );
+        }
+
+        // FLOORPLANS
+        $attachment_ids = get_post_meta( $post_id, '_floorplans', TRUE );
+        if ( is_array($attachment_ids) && !empty($attachment_ids) )
+        {
+            foreach ($attachment_ids as $attachment_id)
+            {
+                $url = wp_get_attachment_image_src( $attachment_id, 'large' );
+                if ($url !== FALSE)
+                {
+                    $data['media']['floorplans'][] = $url[0];
+                }
+            }
+        }
 
         return $data;
     }
