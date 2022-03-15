@@ -1321,6 +1321,10 @@ final class PH_StuRents {
             }
         }
 
+        // TODO Add contract data to the export, with data from this spec:
+        // https://api-spec.sturents.com/#/Changing_data_on_StuRents/put_contract__property_id_
+        // Parts of this can be copied from the v1 export above
+
         return $data;
     }
 
@@ -1464,6 +1468,8 @@ final class PH_StuRents {
                     unset($data['media']);
                 }
 
+                // TODO Extract and unset $data['contract'] in the same way as media
+
                 // If property has already been sent and has an ID saved, change sending method and remove node that isn't in update spec
                 $method = 'PUT';
                 $sturents_property_id = get_post_meta($post_id, '_sturents_property_id', TRUE);
@@ -1477,6 +1483,7 @@ final class PH_StuRents {
                 $json_body = json_encode($data);
                 $auth_token = hash_hmac('sha256', $json_body . $timestamp, $feed['api_key']);
 
+                // TODO May need to do this check earlier, to catch when media and contract data have changed
                 if ( isset($feed['only_send_if_different']) && $feed['only_send_if_different'] == '1' )
                 {
                     $previous_hash = get_post_meta( $post_id, '_sturents_sha1_' . $i, TRUE );
@@ -1545,11 +1552,17 @@ final class PH_StuRents {
                 // Save the SHA-1 hash so we know for next time whether to push it again or not
                 update_post_meta( $post_id, '_sturents_sha1_' . $i, sha1($json_body) );
 
-                // Add price per setting to contract data
+                // TODO If we've put a new property:
+                    // Use media API to put the media to the new property - https://api-spec.sturents.com/#/Changing_data_on_StuRents/put_media__property_id_
+                    // Save the IDs received back in the reply, and the corresponding PH media, as a postmeta on the property (_sturents_media_ids or similar)
+                    // Use contract API to put the contract to the new property - https://api-spec.sturents.com/#/Changing_data_on_StuRents/put_contract__property_id_
+                    // Save the ID received back in the reply to another postmeta (_sturents_contract_id or similar)
 
-                // Make contract call
-
-                // Make media call using data in $media_data
+                // TODO If we're updating the property:
+                    // Check if property media is still the same as the saved value and if not, use the create and delete media API calls to update it
+                    // Delete is here - https://api-spec.sturents.com/#/Changing_data_on_StuRents/delete_media__property_id___media_id_
+                    // Update the contract on the property with the update contract API call - https://api-spec.sturents.com/#/Changing_data_on_StuRents/patch_contract__property_id___contract_id_
+                    // Use the saved contractID in _sturents_contract_id to update it
             }
         }
     }
