@@ -65,6 +65,8 @@ final class PH_StuRents {
         add_action( 'propertyhive_settings_' . $this->id, array( $this, 'output' ) );
         add_action( 'propertyhive_settings_save_' . $this->id, array( $this, 'save' ) );
 
+        add_action( 'admin_enqueue_scripts', array( $this, 'admin_scripts' ) );
+
         add_action( 'propertyhive_admin_field_sturents_existing_feeds', array( $this, 'sturents_existing_feeds' ) );
 
         add_action( 'propertyhive_property_marketing_fields', array( $this, 'add_sturents_checkboxes' ) );
@@ -81,6 +83,19 @@ final class PH_StuRents {
         add_action( 'save_post', array( $this, 'sturents_save_property' ), 99 );
 
         add_action( 'phsturentspropertyimportcronhook', array( $this, 'sturents_property_import_execute_feed' ) );
+    }
+
+    /**
+     * Enqueue scripts
+     */
+    public function admin_scripts() {
+
+        $suffix       = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
+
+        $assets_path = str_replace( array( 'http:', 'https:' ), '', untrailingslashit( plugins_url( '/', __FILE__ ) ) ) . '/assets/';
+
+        // Register scripts
+        wp_register_script( 'propertyhive_sturents_admin', $assets_path . 'js/admin' . /*$suffix .*/ '.js', array( 'jquery' ), PH_STURENTS_VERSION );
     }
 
     public function plugin_add_settings_link( $links )
@@ -183,6 +198,39 @@ final class PH_StuRents {
                 echo '<div class="error"><p><strong>' . $error . '</strong></p></div>';
 
                 delete_transient("sturents_save_error_" . $post->ID);
+            }
+
+            if ( $screen->id == 'property' && isset($_GET['post']) && get_post_type($_GET['post']) == 'property' )
+            {
+                // Check if this property was imported from somewhere and warn if it was
+                $post_meta = get_post_meta($_GET['post']);
+
+                $imported = false;
+
+                foreach ($post_meta as $key => $val )
+                {
+                    if ( strpos($key, '_imported_ref_') !== FALSE )
+                    {
+                        echo '<div class="notice notice-info"><p>';
+                        
+                        echo __( '<strong>It looks like this property was imported automatically. Please note that any changes made manually might get overwritten the next time an import runs.</strong><br><br><em>Import Details: ' . $key . ': ' . $val[0] . '</em>', 'propertyhive' );
+
+                        $import_data = get_post_meta($_GET['post'], '_property_import_data', true);
+                        if( !empty($import_data) )
+                        {
+                            if ( !wp_script_is('propertyhive_sturents_admin', 'enqueued') )
+                            {
+                                wp_enqueue_script( 'propertyhive_sturents_admin' );
+                            }
+
+                            echo '<br><strong><a href="" id="toggle_sturents_import_data_div">Show Import Data</a>
+                              <br><div id="sturents_import_data_div" style="display:none;"><textarea readonly rows="20" cols="120">' . $import_data . '</textarea></div></strong>';
+                        }
+
+                        echo '</p></div>';
+                        break;
+                    }
+                }
             }
         }
     }

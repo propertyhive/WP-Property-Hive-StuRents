@@ -57,7 +57,7 @@ if( in_array( 'propertyhive/propertyhive.php', (array) get_option( 'active_plugi
 				$query = $uri . '?' . http_build_query($params);
 
 				$json = file_get_contents($query); // TO DO: Also make cURL request as fall back
-				//var_dump($json); die();
+				
 				$data = json_decode($json, true);
 
 				if ( $data !== FALSE )
@@ -185,6 +185,8 @@ if( in_array( 'propertyhive/propertyhive.php', (array) get_option( 'active_plugi
 										// Inserted property ok. Continue
 
 										//$this->add_log( 'Successfully added post. The post ID is ' . $post_id, (string)$property->propertyID );
+
+										update_post_meta( $post_id, '_property_import_data', json_encode($property, JSON_PRETTY_PRINT) );
 
 										update_post_meta( $post_id, $imported_ref_key, $property['reference'] );
 										$import_refs[] = $property['reference'];
@@ -435,71 +437,74 @@ if( in_array( 'propertyhive/propertyhive.php', (array) get_option( 'active_plugi
 
 										$media_ids = array();
 										$previous_media_ids = get_post_meta( $post_id, '_floorplans', TRUE );
-										if (isset($property['media']['floorplan']) && !empty($property['media']['floorplan']))
+										if (isset($property['media']['floorplans']) && !empty($property['media']['floorplans']))
 						                {
-											if ( 
-												substr( strtolower($property['media']['floorplan']), 0, 2 ) == '//' || 
-												substr( strtolower($property['media']['floorplan']), 0, 4 ) == 'http'
-											)
-											{
-												// This is a URL
-												$url = $property['media']['floorplan'];
-												$description = '';
-											    
-												$filename = basename( $url );
-
-												// Check, based on the URL, whether we have previously imported this media
-												$imported_previously = false;
-												$imported_previously_id = '';
-												if ( is_array($previous_media_ids) && !empty($previous_media_ids) )
+						                    foreach ($property['media']['floorplans'] as $floorplan)
+						                    {
+												if ( 
+													substr( strtolower($floorplan), 0, 2 ) == '//' || 
+													substr( strtolower($floorplan), 0, 4 ) == 'http'
+												)
 												{
-													foreach ( $previous_media_ids as $previous_media_id )
+													// This is a URL
+													$url = $floorplan;
+													$description = '';
+												    
+													$filename = basename( $url );
+
+													// Check, based on the URL, whether we have previously imported this media
+													$imported_previously = false;
+													$imported_previously_id = '';
+													if ( is_array($previous_media_ids) && !empty($previous_media_ids) )
 													{
-														if ( get_post_meta( $previous_media_id, '_imported_url', TRUE ) == $url )
+														foreach ( $previous_media_ids as $previous_media_id )
 														{
-															$imported_previously = true;
-															$imported_previously_id = $previous_media_id;
-															break;
+															if ( get_post_meta( $previous_media_id, '_imported_url', TRUE ) == $url )
+															{
+																$imported_previously = true;
+																$imported_previously_id = $previous_media_id;
+																break;
+															}
 														}
 													}
-												}
-												
-												if ($imported_previously)
-												{
-													$media_ids[] = $imported_previously_id;
-												}
-												else
-												{
-												    $tmp = download_url( $url );
-												    $file_array = array(
-												        'name' => $filename,
-												        'tmp_name' => $tmp
-												    );
+													
+													if ($imported_previously)
+													{
+														$media_ids[] = $imported_previously_id;
+													}
+													else
+													{
+													    $tmp = download_url( $url );
+													    $file_array = array(
+													        'name' => $filename,
+													        'tmp_name' => $tmp
+													    );
 
-												    // Check for download errors
-												    if ( is_wp_error( $tmp ) ) 
-												    {
-												        @unlink( $file_array[ 'tmp_name' ] );
-
-												        //$this->add_error( 'An error occured whilst importing ' . $url . '. The error was as follows: ' . $tmp->get_error_message(), (string)$property->propertyID );
-												    }
-												    else
-												    {
-													    $id = media_handle_sideload( $file_array, $post_id, $description, array('post_title' => $filename) );
-
-													    // Check for handle sideload errors.
-													    if ( is_wp_error( $id ) ) 
+													    // Check for download errors
+													    if ( is_wp_error( $tmp ) ) 
 													    {
-													        @unlink( $file_array['tmp_name'] );
-													        
-													        //$this->add_error( 'An error occured whilst importing ' . $url . '. The error was as follows: ' . $id->get_error_message(), (string)$property->propertyID );
+													        @unlink( $file_array[ 'tmp_name' ] );
+
+													        //$this->add_error( 'An error occured whilst importing ' . $url . '. The error was as follows: ' . $tmp->get_error_message(), (string)$property->propertyID );
 													    }
 													    else
 													    {
-													    	$media_ids[] = $id;
+														    $id = media_handle_sideload( $file_array, $post_id, $description, array('post_title' => $filename) );
 
-													    	update_post_meta( $id, '_imported_url', $url);
-													    }
+														    // Check for handle sideload errors.
+														    if ( is_wp_error( $id ) ) 
+														    {
+														        @unlink( $file_array['tmp_name'] );
+														        
+														        //$this->add_error( 'An error occured whilst importing ' . $url . '. The error was as follows: ' . $id->get_error_message(), (string)$property->propertyID );
+														    }
+														    else
+														    {
+														    	$media_ids[] = $id;
+
+														    	update_post_meta( $id, '_imported_url', $url);
+														    }
+														}
 													}
 												}
 											}
