@@ -200,6 +200,7 @@ final class PH_StuRents {
                 delete_transient("sturents_save_error_" . $post->ID);
             }
 
+            $screen = get_current_screen();
             if ( $screen->id == 'property' && isset($_GET['post']) && get_post_type($_GET['post']) == 'property' )
             {
                 // Check if this property was imported from somewhere and warn if it was
