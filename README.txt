@@ -3,7 +3,7 @@ Contributors: PropertyHive,BIOSTALL
 Tags: blm, propertyhive, property hive, property, real estate, software, estate agents, estate agent, sturents
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=N68UHATHAEDLN&lc=GB&item_name=BIOSTALL&no_note=0&cn=Add%20special%20instructions%20to%20the%20seller%3a&no_shipping=1&currency_code=GBP&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted
 Requires at least: 3.8
-Tested up to: 6.1
+Tested up to: 6.2.2
 Stable tag: trunk
 Version: 1.0.11
 Homepage: http://wp-property-hive.com/addons/sturents-wordpress-import-export/
@@ -25,6 +25,11 @@ The manual installation method involves downloading the Property Hive StuRents A
 Updating should work like a charm; as always though, ensure you backup your site just in case.
 
 == Changelog ==
+
+= 1.0.12 =
+* Updated to use v1.2 of the StuRents API
+* Fix undefined variable so 'Show Import Data' works
+* Declared support for WordPress 6.2.2
 
 = 1.0.11 =
 * Added 'Show Import Data' link to property record to see exactly what was sent by StuRents
