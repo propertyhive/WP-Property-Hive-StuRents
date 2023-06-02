@@ -82,7 +82,7 @@ final class PH_StuRents {
 
         add_action( 'save_post', array( $this, 'sturents_save_property' ), 99 );
 
-        add_action( 'phsturentspropertyimportcronhook', array( $this, 'sturents_property_import_execute_feed' ) );
+        add_action( 'phsturentsimportcronhook', array( $this, 'sturents_property_import_execute_feed' ) );
     }
 
     /**
@@ -586,7 +586,7 @@ final class PH_StuRents {
                                         <a class="button" href="' . admin_url( 'admin.php?page=ph-settings&tab=sturents&section=edit' . $feed['type'] . '&id=' . $i ) . '">' . __( 'Edit', 'propertyhive' ) . '</a>';
                                         if ( $feed['type'] == 'import' && $feed['mode'] == 'live' )
                                         {
-                                            echo '&nbsp;<a class="button" onclick="jQuery(this).text(\'' . __( 'Running', 'propertyhive' ) . '...\'); jQuery(\'a.button\').attr(\'disabled\', \'disabled\');" href="' . admin_url( 'admin.php?page=ph-settings&tab=sturents&custom_sturents_property_import_cron=phsturentspropertyimportcronhook&id=' . $i ) . '">' . __( 'Run Now', 'propertyhive' ) . '</a>';
+                                            echo '&nbsp;<a class="button" onclick="jQuery(this).text(\'' . __( 'Running', 'propertyhive' ) . '...\'); jQuery(\'a.button\').attr(\'disabled\', \'disabled\');" href="' . admin_url( 'admin.php?page=ph-settings&tab=sturents&custom_sturents_property_import_cron=phsturentsimportcronhook&id=' . $i ) . '">' . __( 'Run Now', 'propertyhive' ) . '</a>';
                                         }
                                         if ( $feed['type'] == 'export' && $feed['mode'] == 'live' )
                                         {
