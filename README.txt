@@ -5,7 +5,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=N68UH
 Requires at least: 3.8
 Tested up to: 6.2.2
 Stable tag: trunk
-Version: 1.0.11
+Version: 1.0.12
 Homepage: http://wp-property-hive.com/addons/sturents-wordpress-import-export/
 
 This add on for Property Hive imports and exports properties from the StuRents website
