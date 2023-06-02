@@ -5,7 +5,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=N68UH
 Requires at least: 3.8
 Tested up to: 6.2.2
 Stable tag: trunk
-Version: 1.0.12
+Version: 1.0.13
 Homepage: http://wp-property-hive.com/addons/sturents-wordpress-import-export/
 
 This add on for Property Hive imports and exports properties from the StuRents website
@@ -25,6 +25,9 @@ The manual installation method involves downloading the Property Hive StuRents A
 Updating should work like a charm; as always though, ensure you backup your site just in case.
 
 == Changelog ==
+
+= 1.0.13 =
+* Corrected hook name fired when cron runs
 
 = 1.0.12 =
 * Updated to use v1.2 of the StuRents API
