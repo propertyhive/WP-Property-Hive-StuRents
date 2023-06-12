@@ -228,6 +228,26 @@ if( in_array( 'propertyhive/propertyhive.php', (array) get_option( 'active_plugi
 											update_post_meta( $post_id, '_latitude', ( ( isset($property['coordinates']['lat']) ) ? $property['coordinates']['lat'] : '' ) );
 											update_post_meta( $post_id, '_longitude', ( ( isset($property['coordinates']['lng']) ) ? $property['coordinates']['lng'] : '' ) );
 
+											$address_fields_to_check = apply_filters( 'propertyhive_sturents_address_fields_to_check', array('city') );
+											$location_term_ids = array();
+
+											foreach ( $address_fields_to_check as $address_field )
+											{
+												if ( isset($property['address'][$address_field]) && trim($property['address'][$address_field]) != '' ) 
+												{
+													$term = term_exists( trim($property['address'][$address_field]), 'location');
+													if ( $term !== 0 && $term !== null && isset($term['term_id']) )
+													{
+														$location_term_ids[] = (int)$term['term_id'];
+													}
+												}
+											}
+
+											if ( !empty($location_term_ids) )
+											{
+												wp_set_post_terms( $post_id, $location_term_ids, 'location' );
+											}
+
 											// Owner
 											update_post_meta( $post_id, '_owner_contact_id', '' );
 
