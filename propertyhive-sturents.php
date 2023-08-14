@@ -83,6 +83,18 @@ final class PH_StuRents {
         add_action( 'save_post', array( $this, 'sturents_save_property' ), 99 );
 
         add_action( 'phsturentsimportcronhook', array( $this, 'sturents_property_import_execute_feed' ) );
+
+        add_filter( 'propertyhive_price_output', array( $this, 'prefix_with_from' ), 10, 5 );
+    }
+
+    public function prefix_with_from( $return, $property, $currency, $prefix, $suffix )
+    {
+        if ( boolval( $property->multiple_prices ) === true )
+        {
+            $return = 'From ' . $return;
+        }
+
+        return $return;
     }
 
     /**

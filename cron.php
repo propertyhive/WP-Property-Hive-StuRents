@@ -277,21 +277,43 @@ if( in_array( 'propertyhive/propertyhive.php', (array) get_option( 'active_plugi
 											update_post_meta( $post_id, '_bathrooms', ( ( isset($property['bathrooms']) ) ? $property['bathrooms'] : '' ) );
 											update_post_meta( $post_id, '_reception_rooms', '' );
 
-											$contract = ( isset($property['contracts'][0]) && !empty($property['contracts'][0]) ) ? $property['contracts'][0] : array();
+											$contracts = ( isset($property['contracts']) && !empty($property['contracts']) ) ? $property['contracts'] : array();
 
-											// Residential Lettings Details
-											// Clean price
-											$price = isset($contract['price']['amount']) ? round(preg_replace("/[^0-9.]/", '', $contract['price']['amount'])) : '';
+											$price = '';
+											$price_amount_per = '';
+											$price_time_period = '';
+											$deposit = '';
+											$multiple_prices = false;
+
+											if ( !empty($contracts) )
+											{
+												foreach ( $contracts as $contract )
+												{
+													$contract_price = isset($contract['price']['amount']) ? round(preg_replace("/[^0-9.]/", '', $contract['price']['amount'])) : '';
+													if ( $price == '' || ( !empty($contract_price) && $contract_price < $price ) )
+													{
+														if ( $price != '' )
+														{
+															$multiple_prices = true;
+														}
+														$price = $contract_price;
+														$price_amount_per = $contract['price']['amount_per'];
+														$price_time_period = $contract['price']['time_period'];
+														$deposit = isset($contract['deposit']['amount']) ? $contract['deposit']['amount'] : '';
+													}
+												}
+											}
 
 											update_post_meta( $post_id, '_rent', $price );
+											update_post_meta( $post_id, '_multiple_prices', $multiple_prices );
 
 											$rent_frequency = 'pcm';
 											$price_actual = $price;
-											if (isset($contract['price']['amount_per']))
+											if (!empty($price_amount_per) && !empty($price_time_period))
 											{
-												if ( $contract['price']['amount_per'] == 'person' )
+												if ( $price_amount_per == 'person' )
 												{
-													switch ($contract['price']['time_period'])
+													switch ($price_time_period)
 													{
 														case "week":
 														{ 
@@ -321,7 +343,7 @@ if( in_array( 'propertyhive/propertyhive.php', (array) get_option( 'active_plugi
 												}
 												else
 												{
-													switch ($contract['price']['time_period'])
+													switch ($price_time_period)
 													{
 														case "week":
 														{ 
@@ -355,7 +377,7 @@ if( in_array( 'propertyhive/propertyhive.php', (array) get_option( 'active_plugi
 											
 											update_post_meta( $post_id, '_poa', '' );
 
-											update_post_meta( $post_id, '_deposit', isset($contract['price']['amount']) ? $contract['deposit']['amount'] : '' );
+											update_post_meta( $post_id, '_deposit', $deposit );
 
 											$available = ( isset($property['available']) && !empty($property['available']) ) ? $property['available'][0] : array();
 											$available_date = '';
