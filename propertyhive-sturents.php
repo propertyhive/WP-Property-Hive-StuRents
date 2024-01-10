@@ -1,11 +1,11 @@
 <?php
 /**
  * Plugin Name: Property Hive StuRents Add On
- * Plugin Uri: http://wp-property-hive.com/addons/sturents-wordpress-import-export/
+ * Plugin Uri: https://wp-property-hive.com/addons/sturents-wordpress-import-export/
  * Description: Add on for Property Hive which imports and exports properties from the StuRents website
  * Version: 1.0.14
  * Author: PropertyHive
- * Author URI: http://wp-property-hive.com
+ * Author URI: https://wp-property-hive.com
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
