@@ -60,6 +60,7 @@ final class PH_StuRents {
         add_filter( "plugin_action_links_" . plugin_basename( __FILE__ ), array( $this, 'plugin_add_settings_link' ) );
 
         add_action( 'admin_notices', array( $this, 'sturents_error_notices') );
+        add_action( 'admin_init', array( $this, 'check_sturents_feed_is_scheduled'), 99 );
 
         add_filter( 'propertyhive_settings_tabs_array', array( $this, 'add_settings_tab' ), 19 );
         add_action( 'propertyhive_settings_' . $this->id, array( $this, 'output' ) );
@@ -85,6 +86,22 @@ final class PH_StuRents {
         add_action( 'phsturentsimportcronhook', array( $this, 'sturents_property_import_execute_feed' ) );
 
         add_filter( 'propertyhive_price_output', array( $this, 'prefix_with_from' ), 10, 5 );
+    }
+
+    public function check_sturents_feed_is_scheduled()
+    {
+        $schedule = wp_get_schedule( 'phsturentsimportcronhook' );
+
+        if ( $schedule === FALSE )
+        {
+            // Hmm... cron job not found. Let's set it up
+            $timestamp = wp_next_scheduled( 'phsturentsimportcronhook' );
+            wp_unschedule_event($timestamp, 'phsturentsimportcronhook' );
+            wp_clear_scheduled_hook('phsturentsimportcronhook');
+            
+            $next_schedule = time() - 60;
+            wp_schedule_event( $next_schedule, 'hourly', 'phsturentsimportcronhook' );
+        }
     }
 
     public function prefix_with_from( $return, $property, $currency, $prefix, $suffix )
