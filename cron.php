@@ -96,6 +96,13 @@ if( in_array( 'propertyhive/propertyhive.php', (array) get_option( 'active_plugi
 								{
 									foreach ($branch['properties'] as $property) 
 									{
+										if ( isset($property['incomplete']) && $property['incomplete'] === true )
+										{
+											if ( apply_filters( 'propertyhive_sturents_import_incomplete', false ) === false )
+											{
+												continue;
+											}
+										}
 										$inserted_updated = false;
 
 										$display_address = '';
