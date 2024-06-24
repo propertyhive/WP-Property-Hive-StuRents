@@ -147,7 +147,7 @@ class PH_Sturents_Install {
 
 		global $wpdb;
 
-		/*$wpdb->hide_errors();
+		$wpdb->hide_errors();
 
 		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
 
@@ -163,7 +163,7 @@ class PH_Sturents_Install {
 		}
 
 		// Create table to record individual feeds being ran
-	   	$table_name = $wpdb->prefix . "ph_propertyimport_logs_instance";
+	   	$table_name = $wpdb->prefix . "ph_sturents_logs_instance";
 	      
 	   	$sql = "CREATE TABLE $table_name (
 					id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -173,7 +173,7 @@ class PH_Sturents_Install {
 				  	PRIMARY KEY  (id)
 	    		) $collate;";
 		
-		$table_name = $wpdb->prefix . "ph_propertyimport_logs_instance_log";
+		$table_name = $wpdb->prefix . "ph_sturents_logs_instance_log";
 		
 		$sql .= "CREATE TABLE $table_name (
 					id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -184,7 +184,7 @@ class PH_Sturents_Install {
 				  	PRIMARY KEY  (id)
 	    		) $collate;";
 		
-		dbDelta( $sql );*/
+		dbDelta( $sql );
 
 	}
 

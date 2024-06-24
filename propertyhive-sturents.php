@@ -307,6 +307,18 @@ final class PH_StuRents {
                     propertyhive_admin_fields( self::get_export_settings() );
                     break;
                 }
+                case "logs":
+                {
+                    $hide_save_button = true;
+                    $this->output_logs();
+                    break;
+                }
+                case "log":
+                {
+                    $hide_save_button = true;
+                    $this->output_log();
+                    break;
+                }
                 default:
                 {
                     $hide_save_button = true;
@@ -314,6 +326,187 @@ final class PH_StuRents {
                 }
             }
         }
+    }
+
+    public function output_logs()
+    {
+        global $wpdb;
+
+        echo '<h3>Logs</h3>';
+
+        $import_id = (int)$_GET['id'];
+
+        $logs = $wpdb->get_results( 
+            "
+            SELECT * 
+            FROM " . $wpdb->prefix . "ph_sturents_logs_instance
+            INNER JOIN 
+                " . $wpdb->prefix . "ph_sturents_logs_instance_log ON  " . $wpdb->prefix . "ph_sturents_logs_instance.id = " . $wpdb->prefix . "ph_sturents_logs_instance_log.instance_id
+            WHERE 
+                import_id = '" . $import_id . "'
+            GROUP BY " . $wpdb->prefix . "ph_sturents_logs_instance.id
+            ORDER BY start_date ASC
+            "
+        );
+
+        if ( $logs )
+        {
+            foreach ( $logs as $log ) 
+            {
+                $log_start_date = get_date_from_gmt( $log->start_date, "H:i jS F Y" );
+
+                $duration = '-';
+                if ( $log->end_date != '0000-00-00 00:00:00' )
+                {
+                    $duration = '';
+
+                    $diff_secs = strtotime($log->end_date) - strtotime($log->start_date);
+
+                    if ( $diff_secs >= 60 )
+                    {
+                        $diff_mins = floor( $diff_secs / 60 );
+                        $duration = $diff_mins . ' minutes, ';
+                        $diff_secs = $diff_secs - ( $diff_mins * 60 );
+                    }
+
+                    $duration .= $diff_secs . ' seconds';
+                }
+
+                echo '<a href="' . admin_url('admin.php?page=ph-settings&tab=sturents&section=log&id=' . $import_id . '&log=' . $log->instance_id) . '">' . $log_start_date . '</a> (' . $duration . ')<br>';
+            }
+        }
+        else
+        {
+            $keep_logs_days = (string)apply_filters( 'propertyhive_sturents_keep_logs_days', '7' );
+
+            // Revert back to 7 days if anything other than numbers has been passed
+            // This prevent SQL injection and errors
+            if ( !preg_match("/^\d+$/", $keep_logs_days) )
+            {
+                $keep_logs_days = '7';
+            }
+
+            echo '<p>No logs found. The import may not have ran, or hasn\'t ran in the past ' . $keep_logs_days . ' days</p>';
+        }
+        ?>
+        <br>
+        <a href="<?php echo admin_url('admin.php?page=ph-settings&tab=sturents'); ?>" class="button">Back</a>
+        <?php
+    }
+
+    public function output_log()
+    {
+        global $wpdb;
+
+        $import_id = (int)$_GET['id'];
+        $instance_id = (int)$_GET['log'];
+
+        echo '<h3>Log</h3>';
+
+        $buttons = array();
+
+    $buttons[] = '<a href="' . admin_url('admin.php?page=ph-settings&tab=sturents&section=logs&id=' . (int)$_GET['id']) . '" class="button">Back To Logs</a>';
+
+    $logs = $wpdb->get_results( 
+        "
+        SELECT * 
+        FROM " . $wpdb->prefix . "ph_sturents_logs_instance
+        INNER JOIN 
+            " . $wpdb->prefix . "ph_sturents_logs_instance_log ON  " . $wpdb->prefix . "ph_sturents_logs_instance.id = " . $wpdb->prefix . "ph_sturents_logs_instance_log.instance_id
+        WHERE 
+            import_id = '" . (int)$_GET['id'] . "'
+        AND
+            instance_id < '" . $instance_id . "'
+        GROUP BY " . $wpdb->prefix . "ph_sturents_logs_instance.id
+        ORDER BY start_date DESC
+        LIMIT 1
+        "
+    );
+
+    if ( $logs )
+    {
+        foreach ( $logs as $log ) 
+        {
+            $buttons[] = '<a href="' . admin_url('admin.php?page=ph-settings&tab=sturents&section=log&id=' . (int)$_GET['id'] . '&log=' . $log->instance_id) . '" class="button">&lt; Previous Log</a>';
+        }
+    }
+
+    $logs = $wpdb->get_results( 
+        "
+        SELECT * 
+        FROM " . $wpdb->prefix . "ph_sturents_logs_instance
+        INNER JOIN 
+            " . $wpdb->prefix . "ph_sturents_logs_instance_log ON  " . $wpdb->prefix . "ph_sturents_logs_instance.id = " . $wpdb->prefix . "ph_sturents_logs_instance_log.instance_id
+        WHERE 
+            import_id = '" . (int)$_GET['id'] . "'
+        AND
+            instance_id > '" . $instance_id . "'
+        GROUP BY " . $wpdb->prefix . "ph_sturents_logs_instance.id
+        ORDER BY start_date ASC
+        LIMIT 1
+        "
+    );
+
+    if ( $logs )
+    {
+        foreach ( $logs as $log ) 
+        {
+            $buttons[] = '<a href="' . admin_url('admin.php?page=ph-settings&tab=sturents&section=log&id=' . (int)$_GET['id'] . '&log=' . $log->instance_id) . '" class="button">Next Log &gt;</a>';
+        }
+    }
+?>
+
+<?php
+    echo implode(" ", $buttons);
+
+        
+        ?>
+<pre style="overflow:auto; max-height:450px; background:#FFF; border-top:1px solid #CCC; border-bottom:1px solid #CCC"><?php
+    
+    $logs = $wpdb->get_results( 
+        "
+        SELECT *
+        FROM " . $wpdb->prefix . "ph_sturents_logs_instance
+        INNER JOIN 
+            " . $wpdb->prefix . "ph_sturents_logs_instance_log ON  " . $wpdb->prefix . "ph_sturents_logs_instance.id = " . $wpdb->prefix . "ph_sturents_logs_instance_log.instance_id
+        WHERE 
+            instance_id = '" . $instance_id . "'
+        ORDER BY " . $wpdb->prefix . "ph_sturents_logs_instance_log.id ASC
+        "
+    );
+
+    $import_id = '';
+    foreach ( $logs as $log ) 
+    {
+        $log_entry = htmlentities($log->entry);
+        if ( strpos($log_entry, 'post ID is ') !== FALSE )
+        {
+            $explode_log = explode(" ", $log_entry);
+            $post_id = $explode_log[count($explode_log)-1];
+            $link = $post_id;
+            if ( !empty(get_edit_post_link($post_id)) )
+            {
+                $link = '<a href="' . get_edit_post_link($post_id) . '" target="_blank">' . $post_id . '</a>';
+            }
+            $log_entry = str_replace($post_id, $link, $log_entry);
+        }
+        $log_date = get_date_from_gmt( $log->log_date, "H:i:s jS F Y" );
+        echo $log_date . ' - ' . $log_entry;
+        
+        if ( $log->severity != 0 && !empty($log->received_data) )
+        {
+            echo ': ';
+            echo htmlentities($log->received_data);
+        }
+
+        echo "\n";
+
+        $import_id = $log->import_id;
+    }
+
+?></pre>
+        <?php
+        echo implode(" ", $buttons);
     }
 
     /**
@@ -613,6 +806,10 @@ final class PH_StuRents {
                                     echo '</td>';
                                     echo '<td class="actions">
                                         <a class="button" href="' . admin_url( 'admin.php?page=ph-settings&tab=sturents&section=edit' . $feed['type'] . '&id=' . $i ) . '">' . __( 'Edit', 'propertyhive' ) . '</a>';
+                                        if ( $feed['type'] == 'import')
+                                        {
+                                            echo '&nbsp;<a class="button" href="' . admin_url( 'admin.php?page=ph-settings&tab=sturents&section=logs&id=' . $i ) . '">' . __( 'Logs', 'propertyhive' ) . '</a>';
+                                        }
                                         if ( $feed['type'] == 'import' && $feed['mode'] == 'live' )
                                         {
                                             echo '&nbsp;<a class="button" onclick="jQuery(this).text(\'' . __( 'Running', 'propertyhive' ) . '...\'); jQuery(\'a.button\').attr(\'disabled\', \'disabled\');" href="' . admin_url( 'admin.php?page=ph-settings&tab=sturents&custom_sturents_property_import_cron=phsturentsimportcronhook&id=' . $i ) . '">' . __( 'Run Now', 'propertyhive' ) . '</a>';
@@ -1327,6 +1524,54 @@ final class PH_StuRents {
         }
         return $lettings_departments;
     }
+
+    public function log( $instance_id, $message, $agent_ref = '' )
+    {
+        if ( $instance_id != '' )
+        {
+            global $wpdb;
+
+            $current_date = new DateTimeImmutable( 'now', new DateTimeZone('UTC') );
+            $current_date = $current_date->format("Y-m-d H:i:s");
+
+            $data = array(
+                'instance_id' => $instance_id,
+                'severity' => 0,
+                'entry' => substr( ( ( $agent_ref != '' ) ? 'AGENT_REF: ' . $agent_ref . ' - ' : '' ) . $message, 0, 255),
+                'log_date' => $current_date
+            );
+        
+            $wpdb->insert( 
+                $wpdb->prefix . "ph_sturents_logs_instance_log", 
+                $data
+            );
+        }
+    }
+
+    public function log_error( $instance_id, $message, $agent_ref = '' )
+    {
+        if ( $instance_id != '' )
+        {
+            global $wpdb;
+
+            $current_date = new DateTimeImmutable( 'now', new DateTimeZone('UTC') );
+            $current_date = $current_date->format("Y-m-d H:i:s");
+
+            $data = array(
+                'instance_id' => $instance_id,
+                'severity' => 1,
+                'entry' => substr( ( ( $agent_ref != '' ) ? 'AGENT_REF: ' . $agent_ref . ' - ' : '' ) . $message, 0, 255),
+                'log_date' => $current_date
+            );
+        
+            $wpdb->insert( 
+                $wpdb->prefix . "ph_sturents_logs_instance_log", 
+                $data
+            );
+        }
+    }
+
+
 }
 
 endif;

@@ -4,11 +4,28 @@ error_reporting( 0 );
 set_time_limit( 0 );
 ini_set('memory_limit','20000M');
 
-global $wpdb, $post;
+$instance_id = 0;
 
-// Check PropertyHive Plugin is active as we'll need this
-if( in_array( 'propertyhive/propertyhive.php', (array) get_option( 'active_plugins', array() ) ) )
+global $wpdb, $post, $instance_id;
+
+include_once( ABSPATH . 'wp-admin/includes/plugin.php' );
+
+// Check Property Hive Plugin is active as we'll need this
+if ( is_plugin_active( 'propertyhive/propertyhive.php' ) )
 {
+	$keep_logs_days = (string)apply_filters( 'propertyhive_sturents_keep_logs_days', '7' );
+
+    // Revert back to 7 days if anything other than numbers has been passed
+    // This prevent SQL injection and errors
+    if ( !preg_match("/^\d+$/", $keep_logs_days) )
+    {
+        $keep_logs_days = '7';
+    }
+
+    // Delete logs older than 7 days
+    $wpdb->query( "DELETE FROM " . $wpdb->prefix . "ph_sturents_logs_instance WHERE start_date < DATE_SUB(NOW(), INTERVAL " . $keep_logs_days . " DAY)" );
+    $wpdb->query( "DELETE FROM " . $wpdb->prefix . "ph_sturents_logs_instance_log WHERE log_date < DATE_SUB(NOW(), INTERVAL " . $keep_logs_days . " DAY)" );
+
 	$sturents_options = get_option( 'propertyhive_sturents' );
 	if ( isset($sturents_options['feeds']) && is_array($sturents_options['feeds']) && !empty($sturents_options['feeds']) )
     {
@@ -52,12 +69,34 @@ if( in_array( 'propertyhive/propertyhive.php', (array) get_option( 'active_plugi
 
     		if ( $ok_to_run_import )
     		{
+    			// log instance start
+	            $current_date = new DateTimeImmutable( 'now', new DateTimeZone('UTC') );
+				$current_date = $current_date->format("Y-m-d H:i:s");
+
+	            $wpdb->insert( 
+	                $wpdb->prefix . "ph_sturents_logs_instance", 
+	                array(
+	                	'import_id' => $i,
+	                    'start_date' => $current_date
+	                )
+	            );
+	            $instance_id = $wpdb->insert_id;
+
+	            if ( $instance_id != '' && isset($_GET['custom_sturents_property_import_cron']) )
+			    {
+			    	$current_user = wp_get_current_user();
+
+			    	$this->log($instance_id, "Executed manually by " . ( ( isset($current_user->display_name) ) ? $current_user->display_name : '' ) );
+			    }
+
     			$current_page = 1;
 				$total_pages = 1;
 				$more_properties = true;
 
 				while ( $more_properties )
 				{
+					$this->log($instance_id, 'Obtaining properties on page ' . $current_page);
+
 	    			$uri = 'https://sturents.com/api/houses';
 					$params = array( 'landlord' => $feed['landlord_id'], 'public' => $feed['public_key'], 'version' => '1.2', 'page' => $current_page );
 					$query = $uri . '?' . http_build_query($params);
@@ -103,6 +142,9 @@ if( in_array( 'propertyhive/propertyhive.php', (array) get_option( 'active_plugi
 												continue;
 											}
 										}
+
+										$this->log($instance_id, 'Importing property', $property['reference']);
+
 										$inserted_updated = false;
 
 										$display_address = '';
@@ -131,12 +173,14 @@ if( in_array( 'propertyhive/propertyhive.php', (array) get_option( 'active_plugi
 								        
 								        if ($property_query->have_posts())
 								        {
-								        	//$this->add_log( 'This property has been imported before. Updating it', (string)$property->propertyID );
+								        	$this->log( $instance_id, 'This property has been imported before. Updating it', $property['reference'] );
 
 								        	// We've imported this property before
 								            while ($property_query->have_posts())
 								            {
 								                $property_query->the_post();
+
+								                $this->log($instance_id, 'Importing property with reference ' . $property['reference'], $property['reference']);
 
 								                $post_id = get_the_ID();
 
@@ -149,11 +193,11 @@ if( in_array( 'propertyhive/propertyhive.php', (array) get_option( 'active_plugi
 											  	);
 
 											 	// Update the post into the database
-											    $post_id = wp_update_post( $my_post );
+											    $post_id = wp_update_post( $my_post, true );
 
 											    if ( is_wp_error( $post_id ) ) 
 												{
-													//$this->add_error( 'ERROR: Failed to update post. The error was as follows: ' . $post_id->get_error_message(), (string)$property->propertyID );
+													$this->log_error($instance_id, 'Failed to update post. The error was as follows: ' . $post_id->get_error_message(), $property['reference']);
 												}
 												else
 												{
@@ -163,8 +207,8 @@ if( in_array( 'propertyhive/propertyhive.php', (array) get_option( 'active_plugi
 								        }
 								        else
 								        {
-								        	//$this->add_log( 'This property hasn\'t been imported before. Inserting it', (string)$property->propertyID );
-
+								        	$this->log( $instance_id, 'This property hasn\'t been imported before. Inserting it', $property['reference'] );
+								    
 								        	// We've not imported this property before
 											$postdata = array(
 												'post_excerpt'   => $property['description'],
@@ -179,7 +223,7 @@ if( in_array( 'propertyhive/propertyhive.php', (array) get_option( 'active_plugi
 
 											if ( is_wp_error( $post_id ) ) 
 											{
-												//$this->add_error( 'Failed to insert post. The error was as follows: ' . $post_id->get_error_message(), (string)$property->propertyID );
+												$this->log_error($instance_id, 'Failed to insert post. The error was as follows: ' . $post_id->get_error_message(), $property['reference']);
 											}
 											else
 											{
@@ -214,7 +258,7 @@ if( in_array( 'propertyhive/propertyhive.php', (array) get_option( 'active_plugi
 
 											// Inserted property ok. Continue
 
-											//$this->add_log( 'Successfully added post. The post ID is ' . $post_id, (string)$property->propertyID );
+											$this->log($instance_id, 'Successfully added post. The post ID is ' . $post_id, $property['reference']);
 
 											update_post_meta( $post_id, '_property_import_data', json_encode($property, JSON_PRETTY_PRINT) );
 
@@ -444,6 +488,8 @@ if( in_array( 'propertyhive/propertyhive.php', (array) get_option( 'active_plugi
 													}
 												}
 												update_post_meta( $post_id, '_photo_urls', $media_urls );
+
+												$this->log( $instance_id, 'Imported ' . count($media_urls) . ' photo URLs', $property['reference'] );
 											}
 							    			else
 							    			{
@@ -523,9 +569,9 @@ if( in_array( 'propertyhive/propertyhive.php', (array) get_option( 'active_plugi
 								                }
 
 								                update_post_meta( $post_id, '_photos', $media_ids );
-								            }
 
-											//$this->add_log( 'Successfully imported ' . count($media_ids) . ' photos', (string)$property->propertyID );
+								                $this->log( $instance_id, 'Imported ' . count($media_ids) . ' photos', $property['reference'] );
+								            }
 
 											// Media - Floorplans
 											if ( get_option('propertyhive_floorplans_stored_as', '') == 'urls' )
@@ -548,6 +594,8 @@ if( in_array( 'propertyhive/propertyhive.php', (array) get_option( 'active_plugi
 													}
 												}
 												update_post_meta( $post_id, '_floorplan_urls', $media_urls );
+
+												$this->log( $instance_id, 'Imported ' . count($media_urls) . ' floorplan URLs', $property['reference'] );
 											}
 							    			else
 							    			{
@@ -626,6 +674,8 @@ if( in_array( 'propertyhive/propertyhive.php', (array) get_option( 'active_plugi
 													}
 												}
 												update_post_meta( $post_id, '_floorplans', $media_ids );
+
+												$this->log( $instance_id, 'Imported ' . count($media_ids) . ' floorplans', $property['reference'] );
 											}
 
 											// Media - EPCs
@@ -645,6 +695,8 @@ if( in_array( 'propertyhive/propertyhive.php', (array) get_option( 'active_plugi
 												}
 
 												update_post_meta( $post_id, '_epc_urls', $media_urls );
+
+												$this->log( $instance_id, 'Imported ' . count($media_urls) . ' EPC URLs', $property['reference'] );
 											}
 							    			else
 							    			{
@@ -720,6 +772,8 @@ if( in_array( 'propertyhive/propertyhive.php', (array) get_option( 'active_plugi
 													}
 												}
 												update_post_meta( $post_id, '_epcs', $media_ids );
+
+												$this->log( $instance_id, 'Imported ' . count($media_ids) . ' EPCs', $property['reference'] );
 											}
 
 											// Media - Virtual Tours
@@ -740,7 +794,7 @@ if( in_array( 'propertyhive/propertyhive.php', (array) get_option( 'active_plugi
 							                	update_post_meta( $post_id, '_virtual_tour_' . $i, (string)$virtual_tour );
 							                }
 
-											//$this->add_log( 'Successfully imported ' . count($virtual_tours) . ' virtual tours', (string)$property->propertyID );
+											$this->log( $instance_id, 'Imported ' . count($virtual_tours) . ' virtual tours', $property['reference'] );
 
 											do_action( "propertyhive_sturents_property_imported", $post_id, $property );
 										}
@@ -763,6 +817,7 @@ if( in_array( 'propertyhive/propertyhive.php', (array) get_option( 'active_plugi
 					{
 						// Failed to decode JSON response
 						$more_properties = false;
+						$this->log_error($instance_id, 'Failed to decode properties: ' . print_r($json, true));
 					}
 
 					++$current_page;
@@ -793,7 +848,7 @@ if( in_array( 'propertyhive/propertyhive.php', (array) get_option( 'active_plugi
 
 							update_post_meta( $post->ID, '_on_market', '' );
 
-							//$this->add_log( 'Property marked as not on market', get_post_meta($post->ID, $imported_ref_key, TRUE) );
+							$this->log($instance_id, 'Property marked as not on market', $property['reference']);
 
 							do_action( "propertyhive_sturents_property_removed", $post->ID );
 						}
@@ -802,6 +857,20 @@ if( in_array( 'propertyhive/propertyhive.php', (array) get_option( 'active_plugi
 
 					unset($import_refs);
 				}
+
+				$this->log($instance_id, 'Finished import', $property['reference']);
+
+				// log instance end
+		    	$current_date = new DateTimeImmutable( 'now', new DateTimeZone('UTC') );
+				$current_date = $current_date->format("Y-m-d H:i:s");
+
+		    	$wpdb->update( 
+		            $wpdb->prefix . "ph_sturents_logs_instance", 
+		            array( 
+		                'end_date' => $current_date
+		            ),
+		            array( 'id' => $instance_id )
+		        );
 				
     		}
     	}
