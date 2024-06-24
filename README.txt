@@ -1,10 +1,10 @@
 === PropertyHive StuRents ===
 Contributors: PropertyHive,BIOSTALL
-Tags: blm, propertyhive, property hive, property, real estate, software, estate agents, estate agent, sturents
+Tags: sturents, propertyhive, property hive, property, real estate, software, estate agents, estate agent
 Requires at least: 3.8
-Tested up to: 6.4.2
+Tested up to: 6.5.4
 Stable tag: trunk
-Version: 1.0.15
+Version: 1.0.16
 Homepage: https://wp-property-hive.com/addons/sturents-wordpress-import-export/
 
 This add on for Property Hive imports and exports properties from the StuRents website
@@ -24,6 +24,11 @@ The manual installation method involves downloading the Property Hive StuRents A
 Updating should work like a charm; as always though, ensure you backup your site just in case.
 
 == Changelog ==
+
+= 1.0.16 =
+* Don't import incomplete properties
+* Added logs to see what's happening during imports
+* Declared support for WordPress 6.5.4
 
 = 1.0.15 =
 * Cater for multiple contracts being provided and use lowest price
