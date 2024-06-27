@@ -93,6 +93,9 @@ if ( is_plugin_active( 'propertyhive/propertyhive.php' ) )
 				$total_pages = 1;
 				$more_properties = true;
 
+				$imported_ref_key = '_imported_ref_' . $i;
+				$import_refs = array();
+
 				while ( $more_properties )
 				{
 					$this->log($instance_id, 'Obtaining properties on page ' . $current_page);
@@ -104,9 +107,6 @@ if ( is_plugin_active( 'propertyhive/propertyhive.php' ) )
 					$json = file_get_contents($query); // TO DO: Also make cURL request as fall back
 					
 					$data = json_decode($json, true);
-
-					$imported_ref_key = '_imported_ref_' . $i;
-					$import_refs = array();
 
 					if ( $data !== FALSE )
 					{	
@@ -459,11 +459,11 @@ if ( is_plugin_active( 'propertyhive/propertyhive.php' ) )
 
 											update_post_meta( $post_id, '_features', count( $features ) );
 							        		
-							        		$i = 0;
+							        		$feature_i = 0;
 									        foreach ( $features as $feature )
 									        {
-									            update_post_meta( $post_id, '_feature_' . $i, $feature );
-									            ++$i;
+									            update_post_meta( $post_id, '_feature_' . $feature_i, $feature );
+									            ++$feature_i;
 									        }	     
 
 									        // Rooms
@@ -789,9 +789,9 @@ if ( is_plugin_active( 'propertyhive/propertyhive.php' ) )
 							                }
 
 							                update_post_meta( $post_id, '_virtual_tours', count($virtual_tours) );
-							                foreach ($virtual_tours as $i => $virtual_tour)
+							                foreach ($virtual_tours as $virtual_tour_i => $virtual_tour)
 							                {
-							                	update_post_meta( $post_id, '_virtual_tour_' . $i, (string)$virtual_tour );
+							                	update_post_meta( $post_id, '_virtual_tour_' . $virtual_tour_i, (string)$virtual_tour );
 							                }
 
 											$this->log( $instance_id, 'Imported ' . count($virtual_tours) . ' virtual tours', $property['reference'] );
@@ -835,6 +835,10 @@ if ( is_plugin_active( 'propertyhive/propertyhive.php' ) )
 								'key'     => $imported_ref_key,
 								'value'   => $import_refs,
 								'compare' => 'NOT IN',
+							),
+							array(
+								'key'     => '_on_market',
+								'value'   => 'yes',
 							),
 						),
 						'orderby' => 'rand'
