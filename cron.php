@@ -862,7 +862,7 @@ if ( is_plugin_active( 'propertyhive/propertyhive.php' ) )
 					unset($import_refs);
 				}
 
-				$this->log($instance_id, 'Finished import', $property['reference']);
+				$this->log($instance_id, 'Finished import');
 
 				// log instance end
 		    	$current_date = new DateTimeImmutable( 'now', new DateTimeZone('UTC') );
