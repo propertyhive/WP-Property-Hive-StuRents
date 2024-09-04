@@ -824,13 +824,18 @@ if ( is_plugin_active( 'propertyhive/propertyhive.php' ) )
 
 				} // end while
 
-				if ( !empty($import_refs) )
+				$remove_when_no_properties = apply_filters( 'propertyhive_sturents_remove_when_no_properties', false );
+				if ( !empty($import_refs) || ( empty($import_refs) && $remove_when_no_properties === true ) )
 				{
 					$args = array(
 						'post_type' => 'property',
 						'nopaging' => true,
 						'meta_query' => array(
 							'relation' => 'AND',
+							array(
+				                'key'     => $imported_ref_key,
+				                'compare' => 'EXISTS',
+				            ),
 							array(
 								'key'     => $imported_ref_key,
 								'value'   => $import_refs,
