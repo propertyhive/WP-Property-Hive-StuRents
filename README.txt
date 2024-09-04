@@ -2,9 +2,9 @@
 Contributors: PropertyHive,BIOSTALL
 Tags: sturents, propertyhive, property hive, property, real estate, software, estate agents, estate agent
 Requires at least: 3.8
-Tested up to: 6.5.5
+Tested up to: 6.6.1
 Stable tag: trunk
-Version: 1.0.17
+Version: 1.0.18
 Homepage: https://wp-property-hive.com/addons/sturents-wordpress-import-export/
 
 This add on for Property Hive imports and exports properties from the StuRents website
@@ -24,6 +24,10 @@ The manual installation method involves downloading the Property Hive StuRents A
 Updating should work like a charm; as always though, ensure you backup your site just in case.
 
 == Changelog ==
+
+= 1.0.18 =
+* Correct issues with vars getting overwritten so properties aren't removed
+* Declared support for WordPress 6.6.1
 
 = 1.0.17 =
 * Correct issues with vars getting overwritten so properties aren't removed
