@@ -26,7 +26,8 @@ Updating should work like a charm; as always though, ensure you backup your site
 == Changelog ==
 
 = 1.0.18 =
-* Correct issues with vars getting overwritten so properties aren't removed
+* New filter to continue removing properties, even if no properties
+* Remove property ID from log that's not property specific
 * Declared support for WordPress 6.6.1
 
 = 1.0.17 =
