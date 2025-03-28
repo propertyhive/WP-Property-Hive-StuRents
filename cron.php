@@ -777,9 +777,14 @@ if ( is_plugin_active( 'propertyhive/propertyhive.php' ) )
 											}
 
 											// Media - Virtual Tours
-											//$this->add_log( 'Importing virtual tours', (string)$property->propertyID );
-
 											$virtual_tours = array();
+											if (isset($property['media']['tours']) && !empty($property['media']['tours']))
+							                {
+							                    foreach ($property['media']['tours'] as $virtual_tour)
+							                    {
+							                        $virtual_tours[] = $virtual_tour;
+							                    }
+							                }
 											if (isset($property['media']['videos']) && !empty($property['media']['videos']))
 							                {
 							                    foreach ($property['media']['videos'] as $virtual_tour)
